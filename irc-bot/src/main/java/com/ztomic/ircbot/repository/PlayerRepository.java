@@ -1,0 +1,14 @@
+package com.ztomic.ircbot.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.ztomic.ircbot.model.Player;
+
+public interface PlayerRepository extends JpaRepository<Player, Long> {
+
+	public List<Player> findByServerAndChannelIgnoreCase(String server, String channel);
+	public Player findByServerAndChannelIgnoreCaseAndNickIgnoreCase(String server, String channel, String nick);
+	
+}

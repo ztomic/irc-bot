@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+	<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+	<property resource="application.properties" />
+	<property name="CONSOLE_LOG_PATTERN" value="%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%30.30(%X{quiz.channel}@%X{pircbotx.server})]){magenta} %clr([%15.15t{14}]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wex" />
+	<property name="FILE_LOG_PATTERN" value="%d{HH:mm:ss.SSS} %5p ${PID:- } [%30.30(%X{quiz.channel}@%X{pircbotx.server})] [%t] --- %-40.40logger{39} : %m%n%wex" />
+	<property name="LOG_FILE" value="${logging.path}/${logging.file}" />
+
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+	
+	<if condition='isDefined("logging.file")'>
+		<then>
+			<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<encoder>
+					<pattern>${FILE_LOG_PATTERN}</pattern>
+				</encoder>
+				<file>${LOG_FILE}.log</file>
+				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+					<fileNamePattern>${LOG_FILE}-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+				</rollingPolicy>
+			</appender>
+		</then>
+	</if>
+
+	<root level="INFO">
+		<if condition='isDefined("logging.file")'>
+			<then>
+				<appender-ref ref="FILE" />
+			</then>
+			<else>
+				<appender-ref ref="CONSOLE" />
+			</else>
+		</if>
+	</root>
+
+	<logger name="com.ztomic" level="ALL" />
+	<logger name="com.ztomic.ircbot.component.PersistenceThreadPoolExecutor" level="INFO" />
+	<logger name="com.ztomic.ircbot.component.pircbotx.CustomThreadedListenerManager" level="INFO" />
+	<logger name="org.pircbotx" level="ALL" />
+	<logger name="org.hibernate.SQL" level="DEBUG" />
+</configuration>

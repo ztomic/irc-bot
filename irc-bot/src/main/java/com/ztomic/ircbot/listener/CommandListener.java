@@ -1,0 +1,124 @@
+package com.ztomic.ircbot.listener;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.pircbotx.PircBotX;
+import org.pircbotx.hooks.types.GenericMessageEvent;
+import org.springframework.util.StringUtils;
+
+import com.ztomic.ircbot.model.User;
+import com.ztomic.ircbot.model.User.Level;
+import com.ztomic.ircbot.util.Colors;
+
+public abstract class CommandListener extends IrcListenerAdapter {
+
+	@Override
+	public void onGenericMessage(GenericMessageEvent<PircBotX> event) throws Exception {
+		if (isCommand(event.getMessage())) {
+			String[] tokens = tokenize(event.getMessage());
+			User user = getUser(event);
+			Command command = getCommand(user, tokens);
+			if (command != null) {
+				String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
+				log.debug("User [" + user + "] is calling command [" + command + "] with arguments " + Arrays.toString(args) + "");
+				if (!isAllowed(command, user)) {
+					event.respond(Colors.paintString(Colors.RED, "You're not allowed to execute command: " + command + ", required level is: " + command.getLevel() + ", you have: " + user.getLevel()));
+					return;
+				}
+				handleCommand(event, command, user, args);
+			}
+		} else {
+			handleMessage(event);
+		}
+	}
+
+	public boolean isCommand(String message) {
+		if (StringUtils.hasText(message)) {
+			return message.startsWith(getCommandPrefix()) && message.length() > getCommandPrefix().length();
+		}
+		return false;
+	}
+	
+	public Set<? extends Command> getCommands() {
+		return Collections.emptySet();
+	}
+	
+	public Set<? extends Command> getCommands(User user) {
+		Set<Command> set = new LinkedHashSet<>();
+		for (Command c : getCommands()) {
+			if (isAllowed(c, user)) {
+				set.add(c);
+			}
+		}
+		return set;
+	}
+	
+	public String getCommandPrefix() {
+		return COMMAND_PREFIX;
+	}
+	
+	public String extractCommandPrefix(String message) {
+		if (StringUtils.hasText(message)) {
+			if (message.startsWith(getCommandPrefix())) {
+				return message.substring(getCommandPrefix().length());
+			}
+		}
+		return message;
+	}
+	
+	public String[] tokenize(String message) {
+		if (StringUtils.hasLength(message)) {
+			return message.split(" ");
+		} else {
+			return new String[]{message};
+		}
+	}
+	
+	public Command getCommand(User user, String[] tokens) {
+		if (tokens != null && tokens.length > 0) {
+			String commandName = extractCommandPrefix(tokens[0]);
+			for (Command c : getCommands()) {
+				if (c.getName().equalsIgnoreCase(commandName)) {
+					return c;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public boolean isAllowed(Command command, User user) {
+		if (user.getLevel().ordinal() >= command.getLevel().ordinal()) {
+			return true;
+		}
+		return false;
+	}
+	
+	public Command createCommand(final String name, final Level level) {
+		return new Command() {
+			
+			@Override
+			public String getName() {
+				return name;
+			}
+			
+			@Override
+			public Level getLevel() {
+				return level;
+			}
+			
+			@Override
+			public String toString() {
+				return name;
+			}
+		};
+	}
+
+	public abstract void handleCommand(GenericMessageEvent<PircBotX> event, Command command, User user, String[] arguments);
+	
+	public void handleMessage(GenericMessageEvent<PircBotX> event) {
+		
+	}
+}
