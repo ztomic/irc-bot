@@ -26,6 +26,7 @@
 			<outputDirectory>/config</outputDirectory>
 			<includes>
 				<include>application*.properties</include>
+				<include>application*.yml</include>
 			</includes>
 		</fileSet>
 	</fileSets>
