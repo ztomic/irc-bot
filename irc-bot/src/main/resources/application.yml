@@ -54,10 +54,10 @@ irc:
     messageLimitInterval: 2
     quiz: true
     channels:
-    - name: #quiz
+    - name: "#quiz"
       language: CROATIAN
       quiz: true
-    - name: #quiz-en
+    - name: "#quiz-en"
       language: ENGLISH
       quiz: true
   - hostname: callidus.sytes.net
@@ -73,9 +73,9 @@ irc:
     messageLimitInterval: 1
     quiz: true
     channels:
-    - name: #quiz
+    - name: "#quiz"
       language: CROATIAN
       quiz: true
-    - name: #quiz-en
+    - name: "#quiz-en"
       language: ENGLISH
       quiz: true
