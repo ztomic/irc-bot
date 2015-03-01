@@ -22,7 +22,7 @@
 			</includes>
 		</fileSet>
 		<fileSet>
-			<directory>${project.basedir}/resources</directory>
+			<directory>${project.basedir}/src/main/resources</directory>
 			<outputDirectory>/config</outputDirectory>
 			<includes>
 				<include>application*.properties</include>
