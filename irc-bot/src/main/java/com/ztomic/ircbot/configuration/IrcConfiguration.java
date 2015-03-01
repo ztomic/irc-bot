@@ -81,6 +81,7 @@ public class IrcConfiguration {
 		private long messageLimit = 15;
 		private long messageLimitInterval = 2;
 		private boolean quiz = true;
+		private boolean enabled = true;
 
 		private List<ChannelConfig> channels = new ArrayList<>();
 
@@ -179,6 +180,14 @@ public class IrcConfiguration {
 		public void setQuiz(boolean quiz) {
 			this.quiz = quiz;
 		}
+		
+		public boolean isEnabled() {
+			return enabled;
+		}
+		
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
 
 		public List<ChannelConfig> getChannels() {
 			return channels;
@@ -200,7 +209,7 @@ public class IrcConfiguration {
 		@Override
 		public String toString() {
 			return "ServerConfig [name=" + name + ", login=" + login + ", realName=" + realName + ", autoNickChange=" + autoNickChange + ", hostname=" + hostname + ", port=" + port + ", nickServPassword=" + nickServPassword + ", encoding=" + encoding + ", maxLineLength=" + maxLineLength
-					+ ", messageLimit=" + messageLimit + ", messageLimitInterval=" + messageLimitInterval + ", quiz=" + quiz + ", channels=" + channels + "]";
+					+ ", messageLimit=" + messageLimit + ", messageLimitInterval=" + messageLimitInterval + ", quiz=" + quiz + ", enabled=" + enabled + ", channels=" + channels + "]";
 		}
 
 	}

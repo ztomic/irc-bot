@@ -54,6 +54,10 @@ public class IrcConnector {
 		
 		MultiBotManager<CustomPircBotX> multiBotManager = new CustomMultiBotManager();
 		for (IrcConfiguration.ServerConfig server : ircConfig.getServers()) {
+			if (!server.isEnabled()) {
+				log.debug("Skipping disabled server {}", server);
+				continue;
+			}
 			Builder<PircBotX> builder = new Configuration.Builder<PircBotX>()
 					.setBotFactory(new CustomBotFactory(server.getMessageLimit(), server.getMessageLimitInterval()))
 					.setName(server.getName())

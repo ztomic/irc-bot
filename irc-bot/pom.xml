@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.2.1.RELEASE</version>
+		<version>1.2.2.RELEASE</version>
 	</parent>
 	<groupId>com.ztomic.ircbot</groupId>
 	<artifactId>irc-bot</artifactId>
@@ -72,7 +72,7 @@
 			<dependency>
 				<groupId>io.spring.platform</groupId>
 				<artifactId>platform-bom</artifactId>
-				<version>1.1.0.RELEASE</version>
+				<version>1.1.1.RELEASE</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
