@@ -32,7 +32,7 @@ public class MessagesConfiguration {
 		
 		private String language = "CROATIAN";
 		
-		private String[] greetBigPlayer = {
+		private String[] greetBigPlayers = {
 				"Ladies and gentlemen, The Master of the Quizz himself -->",
 				"Ono sto je Luke Skywalker u svemiru, na kvizu je -->",
 				"Tesko je naci boljeg ili bolju nego sto je -->",
@@ -41,7 +41,7 @@ public class MessagesConfiguration {
 				"Fanfare zasvirajte, prostrite crveni sag, jer eto nama nase[g] -->",
 				"Pozdrav Herkulu medju kvizoznancima! Dobrodos[ao|la]"
 		};
-		private String[] greetNormalPlayer = {
+		private String[] greetNormalPlayers = {
 				"Ah.. znao sam da nam je nesto nedostajalo, to je nas[a]",
 				"Popijmo nesto za dobra stara vremena, dobri stari znance",
 				"Zaboga, pa gdje si tako dugo",
@@ -52,7 +52,7 @@ public class MessagesConfiguration {
 				"Ohoho.. eto stize poznato nam lice po imenu",
 				"Eto nam kamencica koji je nedostajao nasem mozaiku. Pozdrav"
 		};
-		private String[] greetNewbie = {
+		private String[] greetNewbies = {
 				"Novi dan, novo lice :) Nadam se da ces se ugodno osjecati na nasem kanalu",
 				"Dobrodos/ao/la u potprostorcic virtualnog prostora gdje se trazi malo znanja. Ugodan boravak",
 				"Eto nam fazana :) Zovite ga",
@@ -63,6 +63,28 @@ public class MessagesConfiguration {
 				"Dobrodos/ao/la na kviz. U ovoj sobi trebaju ti samo dobre vijugice i brzi prstici"
 		};
 		
+		private String[] answerComments = new String[] {
+				"Moj naklon",
+				"Ljubim rukice",
+				"Svaka cast",
+				"Ide to vama",
+				"Dajte i drugima priliku",
+				"Eh, da ste jos i lijepi kao sto ste pametni",
+				"Izvrsno",
+				"Fenomenalno",
+				"Maestralno",
+				"Genijalnooo",
+				"Duboko, duboko, nema sto",
+				"Hasta la vista baby",
+				"Tako ste neusporedivi",
+				"Bibliofilija je vasa bolest",
+				"Mozak vam je otekao",
+				"Fantazmagorichno",
+				"Hallelujah",
+				"Nevjerojatno",
+				"Fan fan fantastichooo.."
+			};
+		
 		public String getLanguage() {
 			return language;
 		}
@@ -71,40 +93,52 @@ public class MessagesConfiguration {
 			this.language = language;
 		}
 		
-		public String[] getGreetBigPlayer() {
-			return greetBigPlayer;
+		public String[] getGreetBigPlayers() {
+			return greetBigPlayers;
 		}
 		
-		public void setGreetBigPlayer(String[] greetBigPlayer) {
-			this.greetBigPlayer = greetBigPlayer;
+		public void setGreetBigPlayers(String[] greetBigPlayers) {
+			this.greetBigPlayers = greetBigPlayers;
 		}
 		
 		public String getRandomGreetBigPlayer() {
-			return greetBigPlayer[RANDOM.nextInt(greetBigPlayer.length)];
+			return greetBigPlayers[RANDOM.nextInt(greetBigPlayers.length)];
 		}
 		
-		public String[] getGreetNormalPlayer() {
-			return greetNormalPlayer;
+		public String[] getGreetNormalPlayers() {
+			return greetNormalPlayers;
+		}
+		
+		public void setGreetNormalPlayers(String[] greetNormalPlayers) {
+			this.greetNormalPlayers = greetNormalPlayers;
 		}
 		
 		public String getRandomGreetNormalPlayer() {
-			return greetNormalPlayer[RANDOM.nextInt(greetNormalPlayer.length)];
+			return greetNormalPlayers[RANDOM.nextInt(greetNormalPlayers.length)];
 		}
 		
-		public void setGreetNormalPlayer(String[] greetNormalPlayer) {
-			this.greetNormalPlayer = greetNormalPlayer;
+		public String[] getGreetNewbies() {
+			return greetNewbies;
 		}
 		
-		public String[] getGreetNewbie() {
-			return greetNewbie;
-		}
-		
-		public void setGreetNewbie(String[] greetNewbie) {
-			this.greetNewbie = greetNewbie;
+		public void setGreetNewbies(String[] greetNewbies) {
+			this.greetNewbies = greetNewbies;
 		}
 		
 		public String getRandomGreetNewbie() {
-			return greetNewbie[RANDOM.nextInt(greetNewbie.length)];
+			return greetNewbies[RANDOM.nextInt(greetNewbies.length)];
+		}
+		
+		public String[] getAnswerComments() {
+			return answerComments;
+		}
+		
+		public void setAnswerComments(String[] answerComments) {
+			this.answerComments = answerComments;
+		}
+		
+		public String getRandomAnswerComment() {
+			return answerComments[RANDOM.nextInt(answerComments.length)];
 		}
 
 		@Override
@@ -112,12 +146,14 @@ public class MessagesConfiguration {
 			StringBuilder builder = new StringBuilder();
 			builder.append("QuizMessages [language=");
 			builder.append(language);
-			builder.append(", greetBigPlayer=");
-			builder.append(Arrays.toString(greetBigPlayer));
-			builder.append(", greetNormalPlayer=");
-			builder.append(Arrays.toString(greetNormalPlayer));
-			builder.append(", greetNewbie=");
-			builder.append(Arrays.toString(greetNewbie));
+			builder.append(", greetBigPlayers=");
+			builder.append(Arrays.toString(greetBigPlayers));
+			builder.append(", greetNormalPlayers=");
+			builder.append(Arrays.toString(greetNormalPlayers));
+			builder.append(", greetNewbies=");
+			builder.append(Arrays.toString(greetNewbies));
+			builder.append(", answerComments=");
+			builder.append(Arrays.toString(answerComments));
 			builder.append("]");
 			return builder.toString();
 		}

@@ -64,7 +64,7 @@ irc:
 msg:
   quiz:
     - language: CROATIAN
-      greet-big-player:
+      greet-big-players:
       - "Ladies and gentlemen, The Master of the Quizz himself -->"
       - "Ono sto je Luke Skywalker u svemiru, na kvizu je -->"
       - "Tesko je naci boljeg ili bolju nego sto je -->"
@@ -72,7 +72,7 @@ msg:
       - "Svi ste mi dragi, ali najdraz[i|a] mi je -->"
       - "Fanfare zasvirajte, prostrite crveni sag, jer eto nama nase[g] -->"
       - "Pozdrav Herkulu medju kvizoznancima! Dobrodos[ao|la]"
-      greet-normal-player:
+      greet-normal-players:
       - "Ah.. znao sam da nam je nesto nedostajalo, to je nas[a]"
       - "Popijmo nesto za dobra stara vremena, dobri stari znance"
       - "Zaboga, pa gdje si tako dugo"
@@ -82,7 +82,7 @@ msg:
       - "Sve do prije sekundice, imenica ceznja bila je sinonim za"
       - "Ohoho.. eto stize poznato nam lice po imenu"
       - "Eto nam kamencica koji je nedostajao nasem mozaiku. Pozdrav"
-      greet-newbie:
+      greet-newbies:
       - "Novi dan, novo lice :) Nadam se da ces se ugodno osjecati na nasem kanalu"
       - "Dobrodos/ao/la u potprostorcic virtualnog prostora gdje se trazi malo znanja. Ugodan boravak"
       - "Eto nam fazana :) Zovite ga"
@@ -91,3 +91,23 @@ msg:
       - "Dobrodos[ao|la]! Zelim ti da nadjes maleni trunak opipljive srece u ovome malenome kutku virtualnog prostora"
       - "Raskomoti se, opusti se, ali napregni vijugice"
       - "Dobrodos/ao/la na kviz. U ovoj sobi trebaju ti samo dobre vijugice i brzi prstici"
+      answer-comments:
+      - "Moj naklon"
+      - "Ljubim rukice"
+      - "Svaka cast"
+      - "Ide to vama"
+      - "Dajte i drugima priliku"
+      - "Eh, da ste jos i lijepi kao sto ste pametni"
+      - "Izvrsno"
+      - "Fenomenalno"
+      - "Maestralno"
+      - "Genijalnooo"
+      - "Duboko, duboko, nema sto"
+      - "Hasta la vista baby"
+      - "Tako ste neusporedivi"
+      - "Bibliofilija je vasa bolest"
+      - "Mozak vam je otekao"
+      - "Fantazmagorichno"
+      - "Hallelujah"
+      - "Nevjerojatno"
+      - "Fan fan fantastichooo.."

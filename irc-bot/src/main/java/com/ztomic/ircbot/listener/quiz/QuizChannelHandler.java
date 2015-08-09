@@ -37,7 +37,8 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
-import com.ztomic.ircbot.configuration.Comments;
+import com.ztomic.ircbot.configuration.MessagesConfiguration;
+import com.ztomic.ircbot.configuration.MessagesConfiguration.QuizMessages;
 import com.ztomic.ircbot.listener.quiz.QuizListener.QuizCommand;
 import com.ztomic.ircbot.model.Player;
 import com.ztomic.ircbot.model.Question;
@@ -68,6 +69,9 @@ public class QuizChannelHandler implements Runnable {
 	private PlayerRepository playerRepository;
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private MessagesConfiguration messagesConfiguration;
 
 	private PircBotX bot;
 	private QuizListener quizListener;
@@ -127,6 +131,10 @@ public class QuizChannelHandler implements Runnable {
 
 	public Set<org.pircbotx.User> getUsers(String channel) {
 		return bot.getUserChannelDao().getUsers(getChannel(channel));
+	}
+	
+	QuizMessages getQuizMessages() {
+		return messagesConfiguration.getQuizMessages(language);
 	}
 
 	public void jump() {
@@ -381,7 +389,7 @@ public class QuizChannelHandler implements Runnable {
 						} else {
 							streak = 1;
 						}
-						String comment = Comments.ANSWER_COMMENTS[random.nextInt(Comments.ANSWER_COMMENTS.length)];
+						String comment = getQuizMessages().getRandomAnswerComment();
 						sendMessage(
 								channel,
 								Colors.paintString(Colors.BLUE, comment + ",") + Colors.smartColoredNick(player.getNick()) + Colors.paintString(Colors.BLUE, "! Odgovor je ->") + Colors.paintString(Colors.BOLD, Colors.paintString(Colors.DARK_BLUE, Colors.YELLOW, answer)) + Colors.paintString(Colors.BLUE, "<-. Vrijeme:") + Colors.paintString(Colors.DARK_GREEN, (time / 1000F)) + Colors.paintString(Colors.BLUE, "sec") + (record ? " (" + Colors.paintString(Colors.WHITE, Colors.RED, "OSOBNI REKORD!") + ")." : ".") + (hasStreak ? Colors.paintString(Colors.BLUE, "Niz:") + Colors.paintString(Colors.DARK_GREEN, streak) + Colors.paintString(Colors.BLUE, ".") : "") + Colors.paintString(Colors.BLUE, "Dobivate") + Colors.paintString(Colors.DARK_GREEN, points)
