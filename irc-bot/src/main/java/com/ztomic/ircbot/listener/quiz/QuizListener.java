@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,13 +33,14 @@ import org.springframework.util.StringUtils;
 
 import com.ztomic.ircbot.component.ExecutorFactory;
 import com.ztomic.ircbot.configuration.IrcConfiguration;
+import com.ztomic.ircbot.configuration.IrcConfiguration.ChannelConfig;
+import com.ztomic.ircbot.configuration.MessagesConfiguration.QuizMessages;
 import com.ztomic.ircbot.listener.Command;
 import com.ztomic.ircbot.listener.CommandListener;
 import com.ztomic.ircbot.model.Player;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.PlayerRepository;
-import com.ztomic.ircbot.repository.QuestionRepository;
 import com.ztomic.ircbot.util.Colors;
 import com.ztomic.ircbot.util.Util;
 
@@ -52,15 +52,12 @@ public class QuizListener extends CommandListener {
 	@Autowired
 	private PlayerRepository playerRepository;
 	@Autowired
-	private QuestionRepository questionRepository;
-	@Autowired
 	private ExecutorFactory executorFactory;
 	
 	@Autowired
 	private ConfigurableListableBeanFactory beanFactory;
 	
-	private Map<String, QuizChannelHandler> quizChannelHandlers = Collections.synchronizedMap(new HashMap<String, QuizChannelHandler>());
-	private static Random random = new Random();
+	private Map<String, QuizChannelHandler> quizChannelHandlers = Collections.synchronizedMap(new HashMap<>());
 
 	public int HINT_DELAY_SEC_CFG = 15;
 	public int QUESTION_DELAY_SEC_CFG = 2;
@@ -105,37 +102,6 @@ public class QuizListener extends CommandListener {
 		Arrays.sort(ZERRO_RATED_CHARS);
 	}
 	
-	private String[] greetBigPlayer = {
-			"Ladies and gentlemen, The Master of the Quizz himself -->",
-			"Ono sto je Luke Skywalker u svemiru, na kvizu je -->",
-			"Tesko je naci boljeg ili bolju nego sto je -->",
-			"Smrtnici poklonite se, eto nam besmrtNi(c)ka -->",
-			"Svi ste mi dragi, ali najdraz[i|a] mi je -->",
-			"Fanfare zasvirajte, prostrite crveni sag, jer eto nama nase[g] -->",
-			"Pozdrav Herkulu medju kvizoznancima! Dobrodos[ao|la]"
-	};
-	private String[] greetNormalPlayer = {
-			"Ah.. znao sam da nam je nesto nedostajalo, to je nas[a]",
-			"Popijmo nesto za dobra stara vremena, dobri stari znance",
-			"Zaboga, pa gdje si tako dugo",
-			"Glagol nedostajati izgubio je znacenje cim je us[ao|la]",
-			"Dobrodos[ao|a] natrag",
-			"Bilo nam je pusto bez tebe",
-			"Sve do prije sekundice, imenica ceznja bila je sinonim za",
-			"Ohoho.. eto stize poznato nam lice po imenu",
-			"Eto nam kamencica koji je nedostajao nasem mozaiku. Pozdrav"
-	};
-	private String[] greetNewbie = {
-			"Novi dan, novo lice :) Nadam se da ces se ugodno osjecati na nasem kanalu",
-			"Dobrodos/ao/la u potprostorcic virtualnog prostora gdje se trazi malo znanja. Ugodan boravak",
-			"Eto nam fazana :) Zovite ga",
-			"Oho! Netko nov nam kuca na vrata, a zove se",
-			"Brucosi, stisnite se malo. Eto vam kolege po imenu",
-			"Dobrodos[ao|la]! Zelim ti da nadjes maleni trunak opipljive srece u ovome malenome kutku virtualnog prostora",
-			"Raskomoti se, opusti se, ali napregni vijugice",
-			"Dobrodos/ao/la na kviz. U ovoj sobi trebaju ti samo dobre vijugice i brzi prstici"
-	};
-
 	private ExecutorService executor = null;
 	
 	protected static enum QuizCommand implements Command {
@@ -257,6 +223,9 @@ public class QuizListener extends CommandListener {
 						break;
 					}
 				}
+				
+				QuizMessages messages = getQuizMessages(cj.getBot().getConfiguration().getServerHostname(), cj.getChannel().getName());
+				
 				if (player != null) {
 					Collections.sort(players, Player.CMP_BY_SCORE);
 					int scorePos = players.indexOf(player) + 1;
@@ -273,15 +242,15 @@ public class QuizListener extends CommandListener {
 					Collections.sort(players, Player.CMP_BY_DUELS_WON);
 					int duelsWonPos = players.indexOf(player) + 1;
 					if (scorePos <= 10) {
-						cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, greetBigPlayer[random.nextInt(greetBigPlayer.length)]) + Colors.smartColoredNick(player.getNick()));
+						cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, messages.getRandomGreetBigPlayer()) + Colors.smartColoredNick(player.getNick()));
 					} else {
-						cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, greetNormalPlayer[random.nextInt(greetNormalPlayer.length)]) + Colors.smartColoredNick(player.getNick()));
+						cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, messages.getRandomGreetNormalPlayer()) + Colors.smartColoredNick(player.getNick()));
 					}
 					
 					cj.getBot().sendIRC().message(cj.getChannel().getName(), String.format(JOIN_STATS_FORMAT, Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 					
 				} else {
-					cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, greetNewbie[random.nextInt(greetNewbie.length)]) + Colors.smartColoredNick(cj.getUser().getNick()));
+					cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, messages.getRandomGreetNewbie()) + Colors.smartColoredNick(cj.getUser().getNick()));
 				}
 			}
 		} else {
@@ -291,6 +260,14 @@ public class QuizListener extends CommandListener {
 				startQuiz(cj.getBot(), cj.getChannel().getName(), null);
 			}
 		}
+	}
+	
+	QuizMessages getQuizMessages(String server, String channel) {
+		ChannelConfig channelConfig = ircConfiguration.getChannel(server, channel);
+		if (channelConfig != null) {
+			return messagesConfiguration.getQuizMessages(channelConfig.getLanguage());
+		}
+		return messagesConfiguration.getQuizMessages(null);
 	}
 	
 	@Override

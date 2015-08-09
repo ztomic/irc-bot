@@ -12,22 +12,22 @@ logging:
 # Database configuration
 spring:
   datasource:
-    driverClassName: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.jdbc.Driver 
     url: jdbc:mysql:///quiz?autoReconnect=true&useUnicode=true
     username: quizbot
     password: quizbot
     # http://www.codingpedia.org/ama/tomcat-jdbc-connection-pool-configuration-for-production-and-development/
-    initialSize: 5
-    maxActive: 55
-    maxIdle: 21
-    minIdle: 13
-    timeBetweenEvictionRunMillis: 34000
-    minEvictableIdleTimeMillis: 55000
-    validationQuery: SELECT 1
-    validationInterval: 34000
-    testOnBorrow: true
-    removeAbandoned: true
-    removeAbandonedTimeout: 55
+    initial-size: 5
+    max-active: 55
+    max-idle: 21
+    min-idle: 13
+    time-between-eviction-runs-millis: 34000
+    min-evictable-idle-time-millis: 55000
+    validation-query: SELECT 1
+    validation-interval: 34000
+    test-on-borrow: true
+    remove-abandoned: true
+    remove-abandoned-timeout: 55
     initialize: false
     data: data.sql
 
@@ -39,38 +39,19 @@ spring.jpa.hibernate.ddl-auto: update
 # ----------------------------------------------------------
 
 irc:
-  startIdent: false
+  start-ident: false
   servers:
-  - hostname: irc.fpz.hr
-    port: 6667
-    autoNickChange: true
-    encoding: WINDOWS-1250
-    name: Spark
-    nickServPassword: null
-    login: spark 
-    realName: $artifactId$ by ztomic, v$version$
-    maxLineLength: 380
-    messageLimit: 15
-    messageLimitInterval: 2
-    quiz: true
-    channels:
-    - name: "#quiz"
-      language: CROATIAN
-      quiz: true
-    - name: "#quiz-en"
-      language: ENGLISH
-      quiz: true
   - hostname: callidus.sytes.net
     port: 6667
-    autoNickChange: true
+    auto-nick-change: true
     encoding: WINDOWS-1250
     name: Spark
-    nickServPassword: null
+    nick-serv-password: null
     login: callidus
-    realName: $artifactId$ by ztomic, v$version$
-    maxLineLength: 800
-    messageLimit: 30
-    messageLimitInterval: 1
+    real-name: $artifactId$ by ztomic, v$version$
+    max-line-length: 800
+    message-limit: 30
+    message-limit-interval: 1
     quiz: true
     channels:
     - name: "#quiz"
@@ -79,3 +60,34 @@ irc:
     - name: "#quiz-en"
       language: ENGLISH
       quiz: true
+      
+msg:
+  quiz:
+    - language: CROATIAN
+      greet-big-player:
+      - "Ladies and gentlemen, The Master of the Quizz himself -->"
+      - "Ono sto je Luke Skywalker u svemiru, na kvizu je -->"
+      - "Tesko je naci boljeg ili bolju nego sto je -->"
+      - "Smrtnici poklonite se, eto nam besmrtNi(c)ka -->"
+      - "Svi ste mi dragi, ali najdraz[i|a] mi je -->"
+      - "Fanfare zasvirajte, prostrite crveni sag, jer eto nama nase[g] -->"
+      - "Pozdrav Herkulu medju kvizoznancima! Dobrodos[ao|la]"
+      greet-normal-player:
+      - "Ah.. znao sam da nam je nesto nedostajalo, to je nas[a]"
+      - "Popijmo nesto za dobra stara vremena, dobri stari znance"
+      - "Zaboga, pa gdje si tako dugo"
+      - "Glagol nedostajati izgubio je znacenje cim je us[ao|la]"
+      - "Dobrodos[ao|a] natrag"
+      - "Bilo nam je pusto bez tebe"
+      - "Sve do prije sekundice, imenica ceznja bila je sinonim za"
+      - "Ohoho.. eto stize poznato nam lice po imenu"
+      - "Eto nam kamencica koji je nedostajao nasem mozaiku. Pozdrav"
+      greet-newbie:
+      - "Novi dan, novo lice :) Nadam se da ces se ugodno osjecati na nasem kanalu"
+      - "Dobrodos/ao/la u potprostorcic virtualnog prostora gdje se trazi malo znanja. Ugodan boravak"
+      - "Eto nam fazana :) Zovite ga"
+      - "Oho! Netko nov nam kuca na vrata, a zove se"
+      - "Brucosi, stisnite se malo. Eto vam kolege po imenu"
+      - "Dobrodos[ao|la]! Zelim ti da nadjes maleni trunak opipljive srece u ovome malenome kutku virtualnog prostora"
+      - "Raskomoti se, opusti se, ali napregni vijugice"
+      - "Dobrodos/ao/la na kviz. U ovoj sobi trebaju ti samo dobre vijugice i brzi prstici"

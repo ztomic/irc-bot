@@ -11,10 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import com.ztomic.ircbot.configuration.IrcConfiguration;
+import com.ztomic.ircbot.configuration.MessagesConfiguration;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.repository.UserRepository;
 
-@EnableConfigurationProperties({IrcConfiguration.class})
+@EnableConfigurationProperties({IrcConfiguration.class, MessagesConfiguration.class})
 public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
 	
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -25,6 +26,9 @@ public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
 	
 	@Autowired
 	protected IrcConfiguration ircConfiguration;
+	
+	@Autowired
+	protected MessagesConfiguration messagesConfiguration;
 	
 	@Autowired
 	protected UserRepository userRepository;
