@@ -1,8 +1,5 @@
 package com.ztomic.ircbot.listener.quiz;
 
-import static com.ztomic.ircbot.configuration.Formats.CHANGED_SETTING_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.JOIN_STATS_FORMAT;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -247,7 +244,7 @@ public class QuizListener extends CommandListener {
 						cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, messages.getRandomGreetNormalPlayer()) + Colors.smartColoredNick(player.getNick()));
 					}
 					
-					cj.getBot().sendIRC().message(cj.getChannel().getName(), String.format(JOIN_STATS_FORMAT, Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
+					cj.getBot().sendIRC().message(cj.getChannel().getName(), String.format(messages.getFormats().getJoinStatsFormat(), Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 					
 				} else {
 					cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, messages.getRandomGreetNewbie()) + Colors.smartColoredNick(cj.getUser().getNick()));
@@ -368,7 +365,7 @@ public class QuizListener extends CommandListener {
 									f.set(this, Util.parseList(value, ","));
 								}
 								found = true;
-								event.getBot().sendIRC().message(user.getNick(), String.format(CHANGED_SETTING_FORMAT, param, old, f.get(this)));
+								event.getBot().sendIRC().message(user.getNick(), String.format(getQuizMessages().getFormats().getChangedSettingFormat(), param, old, f.get(this)));
 								break;
 							}
 						}

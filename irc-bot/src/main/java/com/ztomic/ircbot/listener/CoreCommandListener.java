@@ -1,7 +1,5 @@
 package com.ztomic.ircbot.listener;
 
-import static com.ztomic.ircbot.configuration.Formats.TEST_FORMAT;
-
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -165,6 +163,7 @@ public class CoreCommandListener extends CommandListener {
 			if (args != null && args.size() >= 1) {
 				event.getUser().send().message(Colors.paintString(Util.formatList(args, " ")));
 			} else {
+				String TEST_FORMAT = getQuizMessages().getFormats().getTestFormat();
 				event.getUser().send().message(String.format(Colors.paintString(TEST_FORMAT), user.getNick()));
 				event.getUser().send().message(Colors.paintString(String.format(TEST_FORMAT, user.getNick())));
 			}

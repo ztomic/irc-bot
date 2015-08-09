@@ -49,7 +49,7 @@ irc:
     nick-serv-password: null
     login: callidus
     real-name: $artifactId$ by ztomic, v$version$
-    max-line-length: 800
+    max-line-length: 350
     message-limit: 30
     message-limit-interval: 1
     quiz: true

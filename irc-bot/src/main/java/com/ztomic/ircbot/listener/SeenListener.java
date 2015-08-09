@@ -1,10 +1,5 @@
 package com.ztomic.ircbot.listener;
 
-import static com.ztomic.ircbot.configuration.Formats.SEEN_KICK_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.SEEN_NICK_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.SEEN_PART_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.SEEN_QUIT_FORMAT;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -29,8 +24,8 @@ import org.springframework.util.StringUtils;
 import com.google.common.collect.ImmutableSortedSet;
 import com.ztomic.ircbot.configuration.Formats;
 import com.ztomic.ircbot.model.Seen;
-import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.Seen.EventType;
+import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.SeenRepository;
 import com.ztomic.ircbot.util.Colors;
@@ -169,16 +164,17 @@ public class SeenListener extends CommandListener {
 					}
 				}
 			}
+			Formats formats = getQuizMessages().getFormats();
 			if (nick.equalsIgnoreCase(user.getNick())) {
-				event.respond(String.format(Formats.SEEN_SELF_FORMAT, Colors.smartColoredNick(user.getNick())));
+				event.respond(String.format(formats.getSeenSelfFormat(), Colors.smartColoredNick(user.getNick())));
 			} else if (nick.equalsIgnoreCase(event.getBot().getNick())) {
 				// nothing
 			} else if (channels != null) {
-				event.respond(String.format(Formats.SEEN_ONLINE_FORMAT, Colors.smartColoredNick(nick), channels));
+				event.respond(String.format(formats.getSeenOnlineFormat(), Colors.smartColoredNick(nick), channels));
 			} else {
 				String result = find(nick, event.getBot().getConfiguration().getServerHostname());
 				if (result == null) {
-					event.respond(String.format(Formats.SEEN_NOT_FOUND_FORMAT, Colors.smartColoredNick(nick)));
+					event.respond(String.format(formats.getSeenNotFoundFormat(), Colors.smartColoredNick(nick)));
 				} else {
 					event.respond(result);
 				}
@@ -194,23 +190,23 @@ public class SeenListener extends CommandListener {
 		return seenRepository.findByServerAndNickIgnoreCase(server, nick);
 	}
 
-	private static String wrap(String nick, Seen entity) {
+	private String wrap(String nick, Seen entity) {
 		if (entity == null) {
 			return null;
 		}
-
+		Formats formats = getQuizMessages().getFormats();
 		if (entity.getType() == EventType.Part) {
-			return String.format(SEEN_PART_FORMAT, entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getChannel(), entity.getDetail("part.message"));
+			return String.format(formats.getSeenPartFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getChannel(), entity.getDetail("part.message"));
 		}
 		if (entity.getType() == EventType.Nick) {
-			return String.format(SEEN_NICK_FORMAT, entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getDetail("new.nick"));
+			return String.format(formats.getSeenNickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getDetail("new.nick"));
 		}
 		if (entity.getType() == EventType.Kick) {
 			String kicker = entity.getDetail("kicked.from.nick") + "!" + entity.getDetail("kicked.from.ident") + "@" + entity.getDetail("kicked.from.host");
-			return String.format(SEEN_KICK_FORMAT, entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getChannel(), kicker, entity.getDetail("kicked.reason"));
+			return String.format(formats.getSeenKickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getChannel(), kicker, entity.getDetail("kicked.reason"));
 		}
 		if (entity.getType() == EventType.Quit) {
-			return String.format(SEEN_QUIT_FORMAT, entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getDetail("quit.message"));
+			return String.format(formats.getSeenQuitFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getDetail("quit.message"));
 		}
 
 		return null;

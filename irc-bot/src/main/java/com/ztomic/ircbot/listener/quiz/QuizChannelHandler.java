@@ -1,20 +1,5 @@
 package com.ztomic.ircbot.listener.quiz;
 
-import static com.ztomic.ircbot.configuration.Formats.CHANNEL_STREAK_RECORD_COMMENT_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.FIRST_CHAR_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.GUESSED_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.HINT1_BONUS_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.HINT1_CHALLENGE_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.HINT1_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.HINT2_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.HINT3_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.JOIN_STATS_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.LAST_ANSWER_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.LAST_CHAR_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.QUESTION_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.TIMEUP_MESSAGE_FORMAT;
-import static com.ztomic.ircbot.configuration.Formats.VOWELS_FORMAT;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +22,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
+import com.ztomic.ircbot.configuration.Formats;
 import com.ztomic.ircbot.configuration.MessagesConfiguration;
 import com.ztomic.ircbot.configuration.MessagesConfiguration.QuizMessages;
 import com.ztomic.ircbot.listener.quiz.QuizListener.QuizCommand;
@@ -72,6 +58,8 @@ public class QuizChannelHandler implements Runnable {
 	
 	@Autowired
 	private MessagesConfiguration messagesConfiguration;
+	
+	private QuizMessages quizMessages;
 
 	private PircBotX bot;
 	private QuizListener quizListener;
@@ -134,7 +122,14 @@ public class QuizChannelHandler implements Runnable {
 	}
 	
 	QuizMessages getQuizMessages() {
-		return messagesConfiguration.getQuizMessages(language);
+		if (quizMessages == null) {
+			quizMessages = messagesConfiguration.getQuizMessages(language);
+		}
+		return quizMessages;
+	}
+	
+	Formats getFormats() {
+		return getQuizMessages().getFormats();
 	}
 
 	public void jump() {
@@ -147,27 +142,27 @@ public class QuizChannelHandler implements Runnable {
 	public void sendH() {
 		String h = lastHint.getFirstChar();
 		if (h != null) {
-			sendMessage(channel, String.format(FIRST_CHAR_FORMAT, h));
+			sendMessage(channel, String.format(getFormats().getFirstCharFormat(), h));
 		}
 	}
 
 	public void sendV() {
 		String v = lastHint.getVowels();
 		if (v != null) {
-			sendMessage(channel, String.format(VOWELS_FORMAT, v));
+			sendMessage(channel, String.format(getFormats().getVowelsFormat(), v));
 		}
 	}
 
 	public void sendZ() {
 		String z = lastHint.getLastChar();
 		if (z != null) {
-			sendMessage(channel, String.format(LAST_CHAR_FORMAT, z));
+			sendMessage(channel, String.format(getFormats().getLastCharFormat(), z));
 		}
 	}
 
 	public synchronized void repeatLastQuestion() {
 		if (lastQuestion != null && !answered) {
-			sendMessage(channel, String.format(QUESTION_FORMAT, lastQuestion.getId(), lastQuestion.getTheme(), lastQuestion.getQuestion()));
+			sendMessage(channel, String.format(getFormats().getQuestionFormat(), lastQuestion.getId(), lastQuestion.getTheme(), lastQuestion.getQuestion()));
 		}
 	}
 
@@ -317,7 +312,7 @@ public class QuizChannelHandler implements Runnable {
 
 			}
 			if (quizListener.SHOW_GUESSED_CFG && !oldHint.equals(hint.toString()) && phase >= quizListener.SHOW_GUESSED_PHASE_CFG) {
-				sendMessage(channel, String.format(GUESSED_FORMAT, hint.toString()));
+				sendMessage(channel, String.format(getFormats().getGuessedFormat(), hint.toString()));
 			}
 		}
 	}
@@ -406,7 +401,7 @@ public class QuizChannelHandler implements Runnable {
 						}
 						if ((getMaxStreakPlayer() <= 0 || streak > playerRepository.getOne(getMaxStreakPlayer()).getRowRecord()) && hasStreak) {
 							setMaxStreakPlayer(player.getId());
-							sendMessage(channel, String.format(CHANNEL_STREAK_RECORD_COMMENT_FORMAT, player.getNick(), player.getRowRecord()));
+							sendMessage(channel, String.format(getFormats().getChannelStreakRecordCommentFormat(), player.getNick(), player.getRowRecord()));
 						}
 						lastPlayer = player.getId();
 						notify();
@@ -505,8 +500,8 @@ public class QuizChannelHandler implements Runnable {
 						bonus = true;
 						points *= quizListener.BONUS_FACTORS[random.nextInt(quizListener.BONUS_FACTORS.length)];
 					}
-					sendMessage(channel, String.format(QUESTION_FORMAT, q.getId(), q.getTheme(), q.getQuestion()));
-					sendMessage(channel, String.format(lastHint.answer.length() > quizListener.BONUS_ON_LENGTH_CFG ? HINT1_CHALLENGE_FORMAT : (bonus ? HINT1_BONUS_FORMAT : HINT1_FORMAT), lastHint.getLevel1Hint(), points, getPointsString(points)));
+					sendMessage(channel, String.format(getFormats().getQuestionFormat(), q.getId(), q.getTheme(), q.getQuestion()));
+					sendMessage(channel, String.format(lastHint.answer.length() > quizListener.BONUS_ON_LENGTH_CFG ? getFormats().getHint1ChallengeFormat() : (bonus ? getFormats().getHint1BonusFormat() : getFormats().getHint1Format()), lastHint.getLevel1Hint(), points, getPointsString(points)));
 					tstart = System.currentTimeMillis();
 					synchronized (this) {
 						wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
@@ -520,7 +515,7 @@ public class QuizChannelHandler implements Runnable {
 								continue;
 							}
 							points = Math.round(points / 2d);
-							sendMessage(channel, String.format(HINT2_FORMAT, lastHint.getLevel2Hint(), points, getPointsString(points)));
+							sendMessage(channel, String.format(getFormats().getHint2Format(), lastHint.getLevel2Hint(), points, getPointsString(points)));
 							wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
 							if (!answered) {
 								if (jump) {
@@ -532,7 +527,7 @@ public class QuizChannelHandler implements Runnable {
 									continue;
 								}
 								points = Math.round(points / 2d);
-								sendMessage(channel, String.format(HINT3_FORMAT, lastHint.getLevel3Hint(), points, getPointsString(points)));
+								sendMessage(channel, String.format(getFormats().getHint3Format(), lastHint.getLevel3Hint(), points, getPointsString(points)));
 								wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
 							} else {
 								answered = true;
@@ -542,7 +537,7 @@ public class QuizChannelHandler implements Runnable {
 						}
 						lastQuestion = null;
 						if (!answered) {
-							sendMessage(channel, TIMEUP_MESSAGE_FORMAT);// Odgovor
+							sendMessage(channel, getFormats().getTimeupMessageFormat());// Odgovor
 							lastPlayer = 0;
 							streak = 1;
 						}
@@ -592,7 +587,7 @@ public class QuizChannelHandler implements Runnable {
 		case ODG:
 		case ODGOVOR:
 			if (lastAnswer != null) {
-				event.respond(String.format(LAST_ANSWER_FORMAT, lastAnswer));
+				event.respond(String.format(getFormats().getLastAnswerFormat(), lastAnswer));
 			}
 			break;
 		case SCORE:
@@ -625,7 +620,7 @@ public class QuizChannelHandler implements Runnable {
 				Collections.sort(players, Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = players.indexOf(player) + 1;
 				event.respond(
-						String.format(JOIN_STATS_FORMAT, Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
+						String.format(getFormats().getJoinStatsFormat(), Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 			} else {
 				event.respond("Ne postoje podaci o igracu " + Colors.smartColoredNick(nick) + " za kanal " + Colors.paintBoldString(4, channel));
 			}
@@ -866,7 +861,7 @@ public class QuizChannelHandler implements Runnable {
 				int duelsPos = all.indexOf(player) + 1;
 				Collections.sort(all, Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = all.indexOf(player) + 1;
-				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ") + String.format(JOIN_STATS_FORMAT + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
+				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ") + String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 				if (i == 3) break;
 				i++;
 			}
@@ -978,7 +973,7 @@ public class QuizChannelHandler implements Runnable {
 				int duelsPos = all.indexOf(player) + 1;
 				Collections.sort(all, Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = all.indexOf(player) + 1;
-				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ") + String.format(JOIN_STATS_FORMAT +"\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
+				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ") + String.format(getFormats().getJoinStatsFormat() +"\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 				if (i == 10) break;
 				i++;
 			}

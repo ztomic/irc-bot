@@ -1,7 +1,5 @@
 package com.ztomic.ircbot.listener;
 
-import static com.ztomic.ircbot.configuration.Formats.LISTENER_AVAILABLE_COMMANDS_FORMAT;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -35,16 +33,17 @@ public class HelpListener extends CommandListener {
 	@Override
 	public void handleCommand(GenericMessageEvent<PircBotX> event, Command command, User user, String[] arguments) {
 		boolean foundSome = false;
+		Formats formats = getQuizMessages().getFormats();
 		for (CommandListener listener : listeners) {
 			Set<? extends Command> handlerCommands = listener.getCommands(user);
 			if (handlerCommands != null && !handlerCommands.isEmpty()) {
 				foundSome = true;
-				event.getBot().sendIRC().message(user.getNick(), String.format(LISTENER_AVAILABLE_COMMANDS_FORMAT, listener.getName(), user.getLevel(), listener.getCommandPrefix(), Util.formatCollection(handlerCommands, ", ")));
+				event.getBot().sendIRC().message(user.getNick(), String.format(formats.getListenerAvailableCommandsFormat(), listener.getName(), user.getLevel(), listener.getCommandPrefix(), Util.formatCollection(handlerCommands, ", ")));
 			}
 		}
 		
 		if (!foundSome) {
-			event.getBot().sendIRC().message(user.getNick(), String.format(Formats.NO_AVAILABLE_COMMANDS_FORMAT, user.getLevel()));
+			event.getBot().sendIRC().message(user.getNick(), String.format(formats.getNoAvailableCommandsFormat(), user.getLevel()));
 		}
 	}
 }

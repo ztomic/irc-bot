@@ -83,7 +83,9 @@ public class MessagesConfiguration {
 				"Hallelujah",
 				"Nevjerojatno",
 				"Fan fan fantastichooo.."
-			};
+		};
+		
+		private Formats formats = new Formats();
 		
 		public String getLanguage() {
 			return language;
@@ -139,6 +141,14 @@ public class MessagesConfiguration {
 		
 		public String getRandomAnswerComment() {
 			return answerComments[RANDOM.nextInt(answerComments.length)];
+		}
+		
+		public Formats getFormats() {
+			return formats;
+		}
+		
+		public void setFormats(Formats formats) {
+			this.formats = formats;
 		}
 
 		@Override

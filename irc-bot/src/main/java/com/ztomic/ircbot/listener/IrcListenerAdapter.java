@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import com.ztomic.ircbot.configuration.IrcConfiguration;
 import com.ztomic.ircbot.configuration.MessagesConfiguration;
+import com.ztomic.ircbot.configuration.MessagesConfiguration.QuizMessages;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.repository.UserRepository;
 
@@ -64,8 +65,17 @@ public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
 		}
 	}
 	
+	public QuizMessages getQuizMessages(String language) {
+		return messagesConfiguration.getQuizMessages(language);
+	}
+	
+	public QuizMessages getQuizMessages() {
+		return getQuizMessages(null);
+	}
+	
 	@Override
 	public String toString() {
 		return getName() + " (" + getClass().getName() + ")";
 	}
+	
 }
