@@ -4,7 +4,7 @@ import com.ztomic.ircbot.model.User.Level;
 
 public interface Command {
 
-	public String getName();
-	public Level getLevel();
+	String getName();
+	Level getLevel();
 	
 }

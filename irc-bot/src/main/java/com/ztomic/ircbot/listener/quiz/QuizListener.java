@@ -54,7 +54,7 @@ public class QuizListener extends CommandListener {
 	@Autowired
 	private ConfigurableListableBeanFactory beanFactory;
 	
-	private Map<String, QuizChannelHandler> quizChannelHandlers = Collections.synchronizedMap(new HashMap<>());
+	private final Map<String, QuizChannelHandler> quizChannelHandlers = Collections.synchronizedMap(new HashMap<>());
 
 	public int HINT_DELAY_SEC_CFG = 15;
 	public int QUESTION_DELAY_SEC_CFG = 2;
@@ -84,15 +84,12 @@ public class QuizListener extends CommandListener {
 	public int SHOW_GUESSED_PHASE_CFG = 1;
 	/** in minutes */
 	public static int DUEL_ACTIVITY_TIMEOUT_CFG = 60;
-	/** in minutes */
-	public int CLEANER_THREAD_INTERVAL_CFG = 1;
 	public boolean SEND_GREET_CFG = true;
-	public boolean AUTOSTART_QUIZ_CFG = true;
 	public List<String> IGNORED_NICKS_CFG = Arrays.asList("NickServ", "ChanServ", "MemoServ");
 	
 	public int CHANNEL_TIMEOUT_MINUTES_CFG = 0;
 	
-	private Map<String, Map<Command, Long>> ignoredCommands = new HashMap<String, Map<Command,Long>>();
+	private final Map<String, Map<Command, Long>> ignoredCommands = new HashMap<>();
 	
 	static {
 		Arrays.sort(VOWELS);
@@ -101,7 +98,7 @@ public class QuizListener extends CommandListener {
 	
 	private ExecutorService executor = null;
 	
-	protected static enum QuizCommand implements Command {
+	protected enum QuizCommand implements Command {
 		H(User.Level.NEWBIE),
 		V(User.Level.NEWBIE),
 		Z(User.Level.NEWBIE),
@@ -169,9 +166,7 @@ public class QuizListener extends CommandListener {
 	public void cleanScore() {
 		log.debug("Resetting score...");
 		synchronized (quizChannelHandlers) {
-			for (QuizChannelHandler handler : quizChannelHandlers.values()) {
-				handler.cleanScore();
-			}
+			quizChannelHandlers.values().forEach(com.ztomic.ircbot.listener.quiz.QuizChannelHandler::cleanScore);
 		}
 		log.debug("Resetting score done.");
 	}
@@ -180,9 +175,7 @@ public class QuizListener extends CommandListener {
 	public void cleanChannelHandlers() {
 		log.debug("Cleaning channel handlers...");
 		synchronized (quizChannelHandlers) {
-			for (QuizChannelHandler handler : quizChannelHandlers.values()) {
-				handler.clean();
-			}
+			quizChannelHandlers.values().forEach(com.ztomic.ircbot.listener.quiz.QuizChannelHandler::clean);
 		}
 		log.debug("Cleaning channel handlers done.");
 	}
@@ -213,13 +206,10 @@ public class QuizListener extends CommandListener {
 		if (!cj.getUser().getNick().equals(cj.getBot().getUserBot().getNick())) {
 			if (SEND_GREET_CFG) {
 				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(cj.getBot().getConfiguration().getServerHostname(), cj.getChannel().getName());
-				Player player = null;
-				for (Player p : players) {
-					if (p.getNick().equalsIgnoreCase(cj.getUser().getNick())) {
-						player = p;
-						break;
-					}
-				}
+				Player player = players
+						.stream()
+						.filter(p -> p.getNick().equalsIgnoreCase(cj.getUser().getNick()))
+						.findFirst().orElse(null);
 				
 				QuizMessages messages = getQuizMessages(cj.getBot().getConfiguration().getServerHostname(), cj.getChannel().getName());
 				
@@ -313,7 +303,7 @@ public class QuizListener extends CommandListener {
 						map.put(command, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(SAME_CMD_DELAY_SEC_CFG));
 					}
 				} else {
-					map = new HashMap<Command, Long>();
+					map = new HashMap<>();
 					ignoredCommands.put(user.getNick().toLowerCase(), map);
 					map.put(command, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(SAME_CMD_DELAY_SEC_CFG));
 				}
@@ -323,7 +313,7 @@ public class QuizListener extends CommandListener {
 		switch (command) {
 		case START:
 			String lang = null;
-			if (args != null && args.size() >= 1) {
+			if (args.size() >= 1) {
 				lang = args.get(0);
 			}
 			startQuiz(event.getBot(), channel, lang);
@@ -334,7 +324,7 @@ public class QuizListener extends CommandListener {
 			event.getBot().sendIRC().message(channel, "Kviz je zaustavljen.");
 			break;
 		case SET:
-			if (args != null && args.size() >= 2) {
+			if (args.size() >= 2) {
 				String param = args.get(0);
 				String value = args.get(1);
 				try {
@@ -373,16 +363,14 @@ public class QuizListener extends CommandListener {
 					if (!found) {
 						event.getBot().sendIRC().message(user.getNick(), "No config found. See GET command for available options.");
 					}
-				} catch (IllegalArgumentException e) {
-					log.error("Error with setting field (SET cmd)..", e);
-				} catch (IllegalAccessException e) {
+				} catch (IllegalArgumentException | IllegalAccessException e) {
 					log.error("Error with setting field (SET cmd)..", e);
 				}
 				break;
 			}
 			break;
 		case GET:
-			List<String> resp = new ArrayList<String>();
+			List<String> resp = new ArrayList<>();
 			for (Field f : this.getClass().getFields()) {
 				if (f.getName().endsWith("_CFG")) {
 					f.setAccessible(true);
@@ -393,23 +381,23 @@ public class QuizListener extends CommandListener {
 				}
 			}
 			if (!resp.isEmpty()) {
-				event.getBot().sendIRC().message(user.getNick(), Util.formatList(resp, "; "));
+				event.getBot().sendIRC().message(user.getNick(), formatCollection(resp, "; "));
 			}
 			break;
 		case IGNORENICK: {
-			if (args != null && args.size() == 1) {
+			if (args.size() == 1) {
 				String nick = args.get(0).trim();
 				if (isIgnoredNick(nick)) {
 					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] is already ignored");
 				} else {
 					IGNORED_NICKS_CFG.add(nick.trim());
-					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] added to ignore list. New list: " + Util.formatList(IGNORED_NICKS_CFG, ","));
+					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] added to ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
 				}
 			}
 			break;
 		}
 		case UNIGNORENICK: {
-			if (args != null && args.size() == 1) {
+			if (args.size() == 1) {
 				String nick = args.get(0).trim();
 				if (!isIgnoredNick(nick)) {
 					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] is not ignored");
@@ -420,7 +408,7 @@ public class QuizListener extends CommandListener {
 							iter.remove();
 						}
 					}
-					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] removed from ignore list. New list: " + Util.formatList(IGNORED_NICKS_CFG, ","));
+					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
 				}
 			}
 			break;

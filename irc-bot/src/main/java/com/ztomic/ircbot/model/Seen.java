@@ -138,7 +138,7 @@ public class Seen {
 
 	public void addDetail(String key, String value) {
 		if (detail == null) {
-			detail = new HashMap<String, String>();
+			detail = new HashMap<>();
 		}
 		detail.put(key, value);
 	}

@@ -19,7 +19,7 @@ public class CustomOutputRaw extends OutputRaw {
 
 	private static final Logger log = LoggerFactory.getLogger(CustomOutputRaw.class);
 	
-	public List<Long> timestamps = new ArrayList<Long>();
+	public List<Long> timestamps = new ArrayList<>();
 	private double messageLimit;
 	private double messageLimitInterval;
 	
@@ -35,12 +35,10 @@ public class CustomOutputRaw extends OutputRaw {
     	long now = System.currentTimeMillis();
     	for (Iterator<Long> iterator = timestamps.iterator(); iterator.hasNext();) {
     		Long time = iterator.next();
-    		if (time != null && time >= (now-interval-500)) {
-    			// ok
-    		} else {
-    			iterator.remove();
-    		}
-    	}
+			if (time == null || time < (now-interval-500)) {
+                iterator.remove();
+            }
+		}
     	Collections.sort(timestamps);
     	if (timestamps.size() >= limit) {
     		long delay = (timestamps.get(0) + (long)interval + 501) - now;
@@ -111,7 +109,7 @@ public class CustomOutputRaw extends OutputRaw {
 	}
 	
 	public static List<String> splitOnWords(String text, int charLimit) {
-		List<String> output = new ArrayList<String>();
+		List<String> output = new ArrayList<>();
 		char[] chars = text.toCharArray();
 		boolean endOfString = false;
 		int start = 0;

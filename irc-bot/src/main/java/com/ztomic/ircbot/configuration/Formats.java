@@ -269,67 +269,7 @@ public class Formats {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Formats [questionFormat=");
-		builder.append(questionFormat);
-		builder.append(", hint1Format=");
-		builder.append(hint1Format);
-		builder.append(", hint1BonusFormat=");
-		builder.append(hint1BonusFormat);
-		builder.append(", hint1ChallengeFormat=");
-		builder.append(hint1ChallengeFormat);
-		builder.append(", hint2Format=");
-		builder.append(hint2Format);
-		builder.append(", hint3Format=");
-		builder.append(hint3Format);
-		builder.append(", guessedFormat=");
-		builder.append(guessedFormat);
-		builder.append(", timeupMessageFormat=");
-		builder.append(timeupMessageFormat);
-		builder.append(", lastAnswerFormat=");
-		builder.append(lastAnswerFormat);
-		builder.append(", lastCharFormat=");
-		builder.append(lastCharFormat);
-		builder.append(", vowelsFormat=");
-		builder.append(vowelsFormat);
-		builder.append(", firstCharFormat=");
-		builder.append(firstCharFormat);
-		builder.append(", personalStreakRecordCommentFormat=");
-		builder.append(personalStreakRecordCommentFormat);
-		builder.append(", channelStreakRecordCommentFormat=");
-		builder.append(channelStreakRecordCommentFormat);
-		builder.append(", availableCommandsFormat=");
-		builder.append(availableCommandsFormat);
-		builder.append(", listenerAvailableCommandsFormat=");
-		builder.append(listenerAvailableCommandsFormat);
-		builder.append(", noAvailableCommandsFormat=");
-		builder.append(noAvailableCommandsFormat);
-		builder.append(", scoreFormat=");
-		builder.append(scoreFormat);
-		builder.append(", testFormat=");
-		builder.append(testFormat);
-		builder.append(", changedSettingFormat=");
-		builder.append(changedSettingFormat);
-		builder.append(", settingValueFormat=");
-		builder.append(settingValueFormat);
-		builder.append(", seenNotFoundFormat=");
-		builder.append(seenNotFoundFormat);
-		builder.append(", seenOnlineFormat=");
-		builder.append(seenOnlineFormat);
-		builder.append(", seenSelfFormat=");
-		builder.append(seenSelfFormat);
-		builder.append(", seenPartFormat=");
-		builder.append(seenPartFormat);
-		builder.append(", seenNickFormat=");
-		builder.append(seenNickFormat);
-		builder.append(", seenKickFormat=");
-		builder.append(seenKickFormat);
-		builder.append(", seenQuitFormat=");
-		builder.append(seenQuitFormat);
-		builder.append(", joinStatsFormat=");
-		builder.append(joinStatsFormat);
-		builder.append("]");
-		return builder.toString();
+		return "Formats [questionFormat=" + questionFormat + ", hint1Format=" + hint1Format + ", hint1BonusFormat=" + hint1BonusFormat + ", hint1ChallengeFormat=" + hint1ChallengeFormat + ", hint2Format=" + hint2Format + ", hint3Format=" + hint3Format + ", guessedFormat=" + guessedFormat + ", timeupMessageFormat=" + timeupMessageFormat + ", lastAnswerFormat=" + lastAnswerFormat + ", lastCharFormat=" + lastCharFormat + ", vowelsFormat=" + vowelsFormat + ", firstCharFormat=" + firstCharFormat + ", personalStreakRecordCommentFormat=" + personalStreakRecordCommentFormat + ", channelStreakRecordCommentFormat=" + channelStreakRecordCommentFormat + ", availableCommandsFormat=" + availableCommandsFormat + ", listenerAvailableCommandsFormat=" + listenerAvailableCommandsFormat + ", noAvailableCommandsFormat=" + noAvailableCommandsFormat + ", scoreFormat=" + scoreFormat + ", testFormat=" + testFormat + ", changedSettingFormat=" + changedSettingFormat + ", settingValueFormat=" + settingValueFormat + ", seenNotFoundFormat=" + seenNotFoundFormat + ", seenOnlineFormat=" + seenOnlineFormat + ", seenSelfFormat=" + seenSelfFormat + ", seenPartFormat=" + seenPartFormat + ", seenNickFormat=" + seenNickFormat + ", seenKickFormat=" + seenKickFormat + ", seenQuitFormat=" + seenQuitFormat + ", joinStatsFormat=" + joinStatsFormat + "]";
 	}
 	
 	

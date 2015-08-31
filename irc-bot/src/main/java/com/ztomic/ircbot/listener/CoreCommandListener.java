@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.pircbotx.Channel;
 import org.pircbotx.PircBotX;
@@ -17,7 +18,6 @@ import com.ztomic.ircbot.Application;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.util.Colors;
-import com.ztomic.ircbot.util.Util;
 
 @Component
 public class CoreCommandListener extends CommandListener {
@@ -75,50 +75,48 @@ public class CoreCommandListener extends CommandListener {
 		List<String> args = Arrays.asList(arguments);
 		switch ((CoreCommand) command) {
 		case NICK:
-			if (args != null && args.size() == 1) {
+			if (args.size() == 1) {
 				event.getBot().sendIRC().changeNick(args.get(0));
 			}
 			break;
 		case JOIN:
-			if (args != null && args.size() >= 1) {
+			if (args.size() >= 1) {
 				event.getBot().sendIRC().joinChannel(args.get(0));
 			}
 			break;
 		case PART:
-			if (args != null) {
-				if (args.size() == 1) {
-					event.getBot().sendRaw().rawLine("PART " + args.get(0));
-				} else if (args.size() > 1) {
-					event.getBot().sendRaw().rawLine("PART " + args.get(0) + " :" + Util.formatList(args.subList(1, args.size()), " "));
-				}
-			}
+			if (args.size() == 1) {
+                event.getBot().sendRaw().rawLine("PART " + args.get(0));
+            } else if (args.size() > 1) {
+                event.getBot().sendRaw().rawLine("PART " + args.get(0) + " :" + formatCollection(args.subList(1, args.size()), " "));
+            }
 			break;
 		case MSG:
-			if (args != null && args.size() >= 2) {
-				event.getBot().sendIRC().message(args.get(0), Util.formatList(args.subList(1, args.size()), " "));
+			if (args.size() >= 2) {
+				event.getBot().sendIRC().message(args.get(0), formatCollection(args.subList(1, args.size()), " "));
 			}
 			break;
 		case NOTICE:
-			if (args != null && args.size() >= 2) {
-				event.getBot().sendIRC().notice(args.get(0), Util.formatList(args.subList(1, args.size()), " "));
+			if (args.size() >= 2) {
+				event.getBot().sendIRC().notice(args.get(0), formatCollection(args.subList(1, args.size()), " "));
 			}
 			break;
 		case ACTION:
-			if (args != null && args.size() >= 2) {
-				event.getBot().sendIRC().action(args.get(0), Util.formatList(args.subList(1, args.size()), " "));
+			if (args.size() >= 2) {
+				event.getBot().sendIRC().action(args.get(0), formatCollection(args.subList(1, args.size()), " "));
 			}
 			break;
 		case MODE:
-			if (args != null && args.size() >= 2) {
-				event.getBot().sendIRC().mode(args.get(0), Util.formatList(args.subList(1, args.size()), " "));
+			if (args.size() >= 2) {
+				event.getBot().sendIRC().mode(args.get(0), formatCollection(args.subList(1, args.size()), " "));
 			}
 			break;
 		case RAW:
-			event.getBot().sendRaw().rawLine(Util.formatList(args, " "));
+			event.getBot().sendRaw().rawLine(formatCollection(args, " "));
 			break;
 		case LUSERS:
 			String channel = null;
-			if (args != null && args.size() == 1) {
+			if (args.size() == 1) {
 				channel = args.get(0);
 			}
 			Channel chan = null;
@@ -128,21 +126,15 @@ public class CoreCommandListener extends CommandListener {
 			if (chan != null) {
 				ImmutableSortedSet<org.pircbotx.User> users = chan.getUsers();
 				if (users != null) {
-					Set<String> nicks = new TreeSet<String>();
-					for (org.pircbotx.User u : users) {
-						nicks.add(u.getNick());
-					}
-					event.getUser().send().message("Users on channel [" + channel + "]:\n" + Util.formatCollection(nicks, "\n"));
+					Set<String> nicks = users.stream().map(org.pircbotx.User::getNick).collect(Collectors.toCollection(TreeSet::new));
+					event.getUser().send().message("Users on channel [" + channel + "]:\n" + formatCollection(nicks, "\n"));
 				}
 			} else {
 				for (Channel channel_ : event.getBot().getUserChannelDao().getAllChannels()) {
 					ImmutableSortedSet<org.pircbotx.User> users = channel_.getUsers();
 					if (users != null) {
-						Set<String> nicks = new TreeSet<String>();
-						for (org.pircbotx.User u : users) {
-							nicks.add(u.getNick());
-						}
-						event.getUser().send().message("Users on channel [" + channel_.getName() + "]:\n" + Util.formatCollection(nicks, "\n"));
+						Set<String> nicks = users.stream().map(org.pircbotx.User::getNick).collect(Collectors.toCollection(TreeSet::new));
+						event.getUser().send().message("Users on channel [" + channel_.getName() + "]:\n" + formatCollection(nicks, "\n"));
 					}
 				}
 			}
@@ -160,8 +152,8 @@ public class CoreCommandListener extends CommandListener {
 			Application.close(true);
 			break;
 		case TEST: {
-			if (args != null && args.size() >= 1) {
-				event.getUser().send().message(Colors.paintString(Util.formatList(args, " ")));
+			if (args.size() >= 1) {
+				event.getUser().send().message(Colors.paintString(formatCollection(args, " ")));
 			} else {
 				String TEST_FORMAT = getQuizMessages().getFormats().getTestFormat();
 				event.getUser().send().message(String.format(Colors.paintString(TEST_FORMAT), user.getNick()));
@@ -171,7 +163,7 @@ public class CoreCommandListener extends CommandListener {
 		}
 		case USERINFO: {
 			String _nick = user.getNick();
-			if (args != null && args.size() >= 1) {
+			if (args.size() >= 1) {
 				_nick = args.get(0);
 			}
 			User _user = userRepository.findByServerAndNick(event.getBot().getConfiguration().getServerHostname(), _nick);
@@ -184,7 +176,7 @@ public class CoreCommandListener extends CommandListener {
 		}
 		case REGISTERMASTER:
 			// ?REGISTERMASTER nick secretKey
-			if (args != null && args.size() == 2) {
+			if (args.size() == 2) {
 				String _nick = args.get(0);
 				String _key = args.get(1);
 
@@ -207,7 +199,7 @@ public class CoreCommandListener extends CommandListener {
 
 			break;
 		case SETLEVEL: {
-			if (args != null && args.size() == 2) {
+			if (args.size() == 2) {
 				String _nick = args.get(0);
 				String _level = args.get(1);
 				if (StringUtils.hasText(_nick) && StringUtils.hasText(_level)) {

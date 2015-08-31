@@ -2,25 +2,15 @@ package com.ztomic.ircbot.model;
 
 import static javax.persistence.GenerationType.IDENTITY;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.QueryHint;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.ReflectionUtils.FieldCallback;
-import org.springframework.util.StringUtils;
+import com.ztomic.ircbot.model.converter.StringListConverter;
 
-@NamedQueries({ @NamedQuery(name = "Question.selectAll", query = "SELECT q from Question q where q.language = :language or q.language is null", hints = { @QueryHint(name = "org.hibernate.cacheRegion", value = "Query.Question.selectAll"), @QueryHint(name = "org.hibernate.cacheable", value = "true") }), })
 @Table(name = "questions")
 @Entity
 public class Question {
@@ -39,68 +29,9 @@ public class Question {
 	@Column(name = "question", length = 1000, columnDefinition = "varchar(1000) not null")
 	private String question;
 
-	@Column
-	private String answer1;
-
-	@Column
-	private String answer2;
-
-	@Column
-	private String answer3;
-
-	@Column
-	private String answer4;
-
-	@Column
-	private String answer5;
-
-	@Column
-	private String answer6;
-
-	@Column
-	private String answer7;
-
-	@Column
-	private String answer8;
-
-	@Column
-	private String answer9;
-
-	@Column
-	private String answer10;
-
-	@Column
-	private String answer11;
-
-	@Column
-	private String answer12;
-
-	@Column
-	private String answer13;
-
-	@Column
-	private String answer14;
-
-	@Column
-	private String answer15;
-
-	@Column
-	private String answer16;
-
-	@Column
-	private String answer17;
-
-	@Column
-	private String answer18;
-
-	@Column
-	private String answer19;
-
-	@Column
-	private String answer20;
-
-	@Transient
-	private List<String> answers;
+	@Column(name = "answers")
+	@Convert(converter = StringListConverter.class)
+	private StringList answers;
 
 	public long getId() {
 		return id;
@@ -134,30 +65,12 @@ public class Question {
 		this.question = question;
 	}
 
-	public List<String> getAnswers() {
-		if (answers != null)
-			return answers;
-		final List<String> answers = new ArrayList<String>();
-		ReflectionUtils.doWithFields(getClass(), new FieldCallback() {
-			@Override
-			public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
-				if (field.getName().startsWith("answer")) {
-					ReflectionUtils.makeAccessible(field);
-					try {
-						String value = (String) field.get(Question.this);
-						if (StringUtils.hasText(value)) {
-							answers.add((String) value);
-						}
-					} catch (IllegalArgumentException e) {
-						//
-					} catch (IllegalAccessException e) {
-						//
-					}
-				}
-			}
-		});
-		this.answers = answers;
+	public StringList getAnswers() {
 		return answers;
+	}
+	
+	public void setAnswers(StringList answers) {
+		this.answers = answers;
 	}
 
 	@Override

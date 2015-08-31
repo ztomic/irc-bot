@@ -8,6 +8,6 @@ import com.ztomic.ircbot.model.User;
 public interface UserRepository extends JpaRepository<User, Long> {
 
 	@Query("select u from User u where (u.server = ?1) and UPPER(u.nick) = UPPER(?2)")
-	public User findByServerAndNick(String server, String nick);
+	User findByServerAndNick(String server, String nick);
 	
 }

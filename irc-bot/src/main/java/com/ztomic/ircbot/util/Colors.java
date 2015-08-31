@@ -211,7 +211,7 @@ public class Colors {
 	 */
 	public static String removeColors(String line) {
 		int length = line.length();
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		int i = 0;
 		while (i < length) {
 			char ch = line.charAt(i);
@@ -277,12 +277,10 @@ public class Colors {
 	 */
 	public static String removeFormatting(String line) {
 		int length = line.length();
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		for (int i = 0; i < length; i++) {
 			char ch = line.charAt(i);
-			if (ch == RESET || ch == BOLD || ch == UNDERLINE || ch == REVERSE) {
-				// Don't add this character.
-			} else {
+			if (ch != RESET && ch != BOLD && ch != UNDERLINE && ch != REVERSE) {
 				buffer.append(ch);
 			}
 		}
@@ -348,7 +346,7 @@ public class Colors {
 		return text;
 	}
 	
-	public static enum ColorTags {
+	public enum ColorTags {
 		C("{C}", COLOR), B("{B}", BOLD), U("{U}", UNDERLINE), O("{O}", RESET), R("{R}", REVERSE), NL("{NL}", '\n');
 		
 		public String regex;

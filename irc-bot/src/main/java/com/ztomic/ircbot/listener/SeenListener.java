@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.pircbotx.Channel;
 import org.pircbotx.PircBotX;
@@ -103,7 +104,6 @@ public class SeenListener extends CommandListener {
 			if (s == null) {
 				s = new Seen();
 			}
-			String channel = null;
 			org.pircbotx.User user = qe.getUser();
 			Set<String> channels = new HashSet<>();
 			s.setNick(user.getNick());
@@ -112,10 +112,10 @@ public class SeenListener extends CommandListener {
 			s.setHost(user.getHostmask());
 			s.setServer(server);
 			s.setType(EventType.Quit);
-			s.setChannel(channel);
+			s.setChannel(null);
 			s.setTime(new Date(qe.getTimestamp()));
 			if (s.getDetail() != null) s.getDetail().clear();
-			if (channels != null) s.addDetail("quit.channels", StringUtils.collectionToCommaDelimitedString(channels));
+			s.addDetail("quit.channels", StringUtils.collectionToCommaDelimitedString(channels));
 			s.addDetail("quit.message", qe.getReason());
 			s = seenRepository.save(s);
 		} else if (ev instanceof NickChangeEvent) {
@@ -125,12 +125,7 @@ public class SeenListener extends CommandListener {
 				s = new Seen();
 			}
 			org.pircbotx.User user = nc.getUser();
-			Set<String> channels = new HashSet<>();
-			for (Channel chan : user.getChannels()) {
-				if (user != null) {
-					channels.add(chan.getName());
-				}
-			}
+			Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
 			s.setNick(nc.getOldNick());
 			s.setName(user.getRealName());
 			s.setIdent(user.getLogin());
@@ -158,7 +153,7 @@ public class SeenListener extends CommandListener {
 			if (user_ != null) {
 				ImmutableSortedSet<Channel> chans = event.getBot().getUserChannelDao().getChannels(user_);
 				if (chans != null && !chans.isEmpty()) {
-					channels = new TreeSet<String>();
+					channels = new TreeSet<>();
 					for (Channel c : chans) {
 						channels.add(c.getName());
 					}

@@ -1,0 +1,25 @@
+2.0.0 -> 2.0.1
+
+ALTER TABLE  `questions` ADD  `answers` TEXT NOT NULL AFTER  `question` ;
+UPDATE `questions` SET `answers` = CONCAT_WS(  '\n', answer1, answer2, answer3, answer4, answer5, answer6, answer7, answer8, answer9, answer10, answer11, answer12, answer13, answer14, answer15, answer16, answer17, answer18, answer19, answer20);
+ALTER TABLE `questions`
+  DROP `answer1`,
+  DROP `answer2`,
+  DROP `answer3`,
+  DROP `answer4`,
+  DROP `answer5`,
+  DROP `answer6`,
+  DROP `answer7`,
+  DROP `answer8`,
+  DROP `answer9`,
+  DROP `answer10`,
+  DROP `answer11`,
+  DROP `answer12`,
+  DROP `answer13`,
+  DROP `answer14`,
+  DROP `answer15`,
+  DROP `answer16`,
+  DROP `answer17`,
+  DROP `answer18`,
+  DROP `answer19`,
+  DROP `answer20`;

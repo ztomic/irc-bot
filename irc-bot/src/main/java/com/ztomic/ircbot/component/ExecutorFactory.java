@@ -15,7 +15,7 @@ public class ExecutorFactory {
 	private EntityManagerFactory entityManagerFactory;
 	
 	public PersistenceThreadPoolExecutor createPersistenceThreadPoolExecutor(int poolSize) {
-		PersistenceThreadPoolExecutor executor = new PersistenceThreadPoolExecutor(0, poolSize, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+		PersistenceThreadPoolExecutor executor = new PersistenceThreadPoolExecutor(0, poolSize, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
 		executor.setEntityManagerFactory(entityManagerFactory);
 		return executor;
 	}

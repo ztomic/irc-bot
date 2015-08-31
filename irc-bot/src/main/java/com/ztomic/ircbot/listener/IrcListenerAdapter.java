@@ -1,6 +1,8 @@
 package com.ztomic.ircbot.listener;
 
+import java.util.Collection;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.ListenerAdapter;
@@ -71,6 +73,13 @@ public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
 	
 	public QuizMessages getQuizMessages() {
 		return getQuizMessages(null);
+	}
+	
+	public static String formatCollection(Collection<?> col, String separator) {
+		if (col == null) {
+			return "";
+		}
+		return col.stream().map(c -> c != null ? c.toString() : null).collect(Collectors.joining(separator));
 	}
 	
 	@Override

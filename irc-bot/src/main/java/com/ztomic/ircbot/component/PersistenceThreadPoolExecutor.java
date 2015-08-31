@@ -60,7 +60,7 @@ public class PersistenceThreadPoolExecutor extends ThreadPoolExecutor {
 	private ThreadLocal<Boolean> participate = new ThreadLocal<Boolean>() {
 		protected Boolean initialValue() {
 			return false;
-		};
+		}
 	};
 
 	private EntityManagerFactory entityManagerFactory;

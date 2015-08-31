@@ -58,7 +58,7 @@ public class IrcConnector {
 				log.debug("Skipping disabled server {}", server);
 				continue;
 			}
-			Builder<PircBotX> builder = new Configuration.Builder<PircBotX>()
+			Builder<PircBotX> builder = new Configuration.Builder<>()
 					.setBotFactory(new CustomBotFactory(server.getMessageLimit(), server.getMessageLimitInterval()))
 					.setName(server.getName())
 					.setLogin(server.getLogin())

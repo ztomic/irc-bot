@@ -160,68 +160,31 @@ public class Player {
 		this.duels++;
 	}
 
-	public static final Comparator<Player> CMP_BY_SPEED_ASC = new Comparator<Player>() {
-
-		@Override
-		public int compare(Player o1, Player o2) {
-			if (o1.fastestTime == 0 && o2.fastestTime == 0)
-				return 0;
-			if (o1.fastestTime != 0 && o2.fastestTime == 0)
-				return -1;
-			if (o1.fastestTime == 0 && o2.fastestTime != 0)
-				return 1;
-			return Long.valueOf(o1.fastestTime).compareTo(Long.valueOf(o2.fastestTime));
-		}
+	public static final Comparator<Player> CMP_BY_SPEED_ASC = (o1, o2) -> {
+		if (o1.fastestTime == 0 && o2.fastestTime == 0)
+			return 0;
+		if (o1.fastestTime != 0 && o2.fastestTime == 0)
+			return -1;
+		if (o1.fastestTime == 0)
+			return 1;
+		return Long.valueOf(o1.fastestTime).compareTo(o2.fastestTime);
 	};
 
-	public static final Comparator<Player> CMP_BY_STREAK_ASC = new Comparator<Player>() {
+	public static final Comparator<Player> CMP_BY_STREAK_ASC = (o1, o2) -> Integer.valueOf(o2.rowRecord).compareTo(o1.rowRecord);
 
-		@Override
-		public int compare(Player o1, Player o2) {
-			return Integer.valueOf(o2.rowRecord).compareTo(Integer.valueOf(o1.rowRecord));
+	public static final Comparator<Player> CMP_BY_SCORE = (o1, o2) -> Long.valueOf(o2.score).compareTo(o1.score);
 
-		}
+	public static final Comparator<Player> CMP_BY_WEEK_SCORE = (o1, o2) -> Long.valueOf(o2.weekScore).compareTo(o1.weekScore);
+
+	public static final Comparator<Player> CMP_BY_MONTH_SCORE = (o1, o2) -> Long.valueOf(o2.monthScore).compareTo(o1.monthScore);
+
+	public static final Comparator<Player> CMP_BY_DUELS = (o1, o2) -> {
+		if (o1.duels == o2.duels)
+			return Long.valueOf(o2.duelsWon).compareTo((long) o1.duelsWon);
+		return Long.valueOf(o2.duels).compareTo((long) o1.duels);
 	};
 
-	public static final Comparator<Player> CMP_BY_SCORE = new Comparator<Player>() {
-
-		@Override
-		public int compare(Player o1, Player o2) {
-			return Long.valueOf(o2.score).compareTo(Long.valueOf(o1.score));
-		}
-	};
-
-	public static final Comparator<Player> CMP_BY_WEEK_SCORE = new Comparator<Player>() {
-
-		@Override
-		public int compare(Player o1, Player o2) {
-			return Long.valueOf(o2.weekScore).compareTo(Long.valueOf(o1.weekScore));
-		}
-	};
-
-	public static final Comparator<Player> CMP_BY_MONTH_SCORE = new Comparator<Player>() {
-
-		@Override
-		public int compare(Player o1, Player o2) {
-			return Long.valueOf(o2.monthScore).compareTo(Long.valueOf(o1.monthScore));
-		}
-	};
-
-	public static final Comparator<Player> CMP_BY_DUELS = new Comparator<Player>() {
-		@Override
-		public int compare(Player o1, Player o2) {
-			if (o1.duels == o2.duels)
-				return Long.valueOf(o2.duelsWon).compareTo(Long.valueOf(o1.duelsWon));
-			return Long.valueOf(o2.duels).compareTo(Long.valueOf(o1.duels));
-		}
-	};
-
-	public static final Comparator<Player> CMP_BY_DUELS_WON = new Comparator<Player>() {
-		@Override
-		public int compare(Player o1, Player o2) {
-			return Long.valueOf(o2.duelsWon).compareTo(Long.valueOf(o1.duelsWon));
-		}
-	};
+	public static final Comparator<Player> CMP_BY_DUELS_WON = (o1, o2) -> Long.valueOf(o2.duelsWon).compareTo((long) o1.duelsWon);
 
 	public void incrementScore(long points) {
 		if (lastAnswered == null) {

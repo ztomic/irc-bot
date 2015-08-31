@@ -8,7 +8,7 @@ import com.ztomic.ircbot.model.Player;
 
 public interface PlayerRepository extends JpaRepository<Player, Long> {
 
-	public List<Player> findByServerAndChannelIgnoreCase(String server, String channel);
-	public Player findByServerAndChannelIgnoreCaseAndNickIgnoreCase(String server, String channel, String nick);
+	List<Player> findByServerAndChannelIgnoreCase(String server, String channel);
+	Player findByServerAndChannelIgnoreCaseAndNickIgnoreCase(String server, String channel, String nick);
 	
 }

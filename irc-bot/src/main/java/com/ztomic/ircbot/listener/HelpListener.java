@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import com.ztomic.ircbot.configuration.Formats;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
-import com.ztomic.ircbot.util.Util;
 
 @Component
 public class HelpListener extends CommandListener {
@@ -38,7 +37,7 @@ public class HelpListener extends CommandListener {
 			Set<? extends Command> handlerCommands = listener.getCommands(user);
 			if (handlerCommands != null && !handlerCommands.isEmpty()) {
 				foundSome = true;
-				event.getBot().sendIRC().message(user.getNick(), String.format(formats.getListenerAvailableCommandsFormat(), listener.getName(), user.getLevel(), listener.getCommandPrefix(), Util.formatCollection(handlerCommands, ", ")));
+				event.getBot().sendIRC().message(user.getNick(), String.format(formats.getListenerAvailableCommandsFormat(), listener.getName(), user.getLevel(), listener.getCommandPrefix(), formatCollection(handlerCommands, ", ")));
 			}
 		}
 		

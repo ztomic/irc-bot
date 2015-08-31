@@ -6,6 +6,6 @@ import com.ztomic.ircbot.model.Seen;
 
 public interface SeenRepository extends JpaRepository<Seen, Long> {
 
-	public Seen findByServerAndNickIgnoreCase(String server, String nick);
+	Seen findByServerAndNickIgnoreCase(String server, String nick);
 	
 }

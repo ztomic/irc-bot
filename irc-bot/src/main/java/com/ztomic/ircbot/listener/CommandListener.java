@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.types.GenericMessageEvent;
@@ -36,10 +37,7 @@ public abstract class CommandListener extends IrcListenerAdapter {
 	}
 
 	public boolean isCommand(String message) {
-		if (StringUtils.hasText(message)) {
-			return message.startsWith(getCommandPrefix()) && message.length() > getCommandPrefix().length();
-		}
-		return false;
+		return StringUtils.hasText(message) && message.startsWith(getCommandPrefix()) && message.length() > getCommandPrefix().length();
 	}
 	
 	public Set<? extends Command> getCommands() {
@@ -47,13 +45,7 @@ public abstract class CommandListener extends IrcListenerAdapter {
 	}
 	
 	public Set<? extends Command> getCommands(User user) {
-		Set<Command> set = new LinkedHashSet<>();
-		for (Command c : getCommands()) {
-			if (isAllowed(c, user)) {
-				set.add(c);
-			}
-		}
-		return set;
+		return getCommands().stream().filter(c -> isAllowed(c, user)).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
 	public String getCommandPrefix() {
@@ -90,10 +82,7 @@ public abstract class CommandListener extends IrcListenerAdapter {
 	}
 	
 	public boolean isAllowed(Command command, User user) {
-		if (user.getLevel().ordinal() >= command.getLevel().ordinal()) {
-			return true;
-		}
-		return false;
+		return user.getLevel().ordinal() >= command.getLevel().ordinal();
 	}
 	
 	public Command createCommand(final String name, final Level level) {

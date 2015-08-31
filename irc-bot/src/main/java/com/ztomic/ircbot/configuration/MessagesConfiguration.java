@@ -153,30 +153,14 @@ public class MessagesConfiguration {
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			builder.append("QuizMessages [language=");
-			builder.append(language);
-			builder.append(", greetBigPlayers=");
-			builder.append(Arrays.toString(greetBigPlayers));
-			builder.append(", greetNormalPlayers=");
-			builder.append(Arrays.toString(greetNormalPlayers));
-			builder.append(", greetNewbies=");
-			builder.append(Arrays.toString(greetNewbies));
-			builder.append(", answerComments=");
-			builder.append(Arrays.toString(answerComments));
-			builder.append("]");
-			return builder.toString();
+			return "QuizMessages [language=" + language + ", greetBigPlayers=" + Arrays.toString(greetBigPlayers) + ", greetNormalPlayers=" + Arrays.toString(greetNormalPlayers) + ", greetNewbies=" + Arrays.toString(greetNewbies) + ", answerComments=" + Arrays.toString(answerComments) + "]";
 		}
 		
 	}
 	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("MessagesConfiguration [quiz=");
-		builder.append(quiz);
-		builder.append("]");
-		return builder.toString();
+		return "MessagesConfiguration [quiz=" + quiz + "]";
 	}
 	
 }
