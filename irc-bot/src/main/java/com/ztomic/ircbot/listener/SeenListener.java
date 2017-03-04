@@ -9,15 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.pircbotx.Channel;
-import org.pircbotx.PircBotX;
-import org.pircbotx.hooks.Event;
-import org.pircbotx.hooks.events.JoinEvent;
-import org.pircbotx.hooks.events.KickEvent;
-import org.pircbotx.hooks.events.NickChangeEvent;
-import org.pircbotx.hooks.events.PartEvent;
-import org.pircbotx.hooks.events.QuitEvent;
-import org.pircbotx.hooks.types.GenericMessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -30,6 +21,15 @@ import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.SeenRepository;
 import com.ztomic.ircbot.util.Colors;
+import org.pircbotx.Channel;
+import org.pircbotx.PircBotX;
+import org.pircbotx.hooks.Event;
+import org.pircbotx.hooks.events.JoinEvent;
+import org.pircbotx.hooks.events.KickEvent;
+import org.pircbotx.hooks.events.NickChangeEvent;
+import org.pircbotx.hooks.events.PartEvent;
+import org.pircbotx.hooks.events.QuitEvent;
+import org.pircbotx.hooks.types.GenericMessageEvent;
 
 @Component
 public class SeenListener extends CommandListener {
@@ -37,8 +37,12 @@ public class SeenListener extends CommandListener {
 	static final Pattern jbNickPattern = Pattern.compile("^([a-zA-Z0-9_-]+?)(?:\\||\\`).*$");
 	static final Pattern irssiNickPattern = Pattern.compile("^_*([a-zA-Z0-9_-]+?)_*$");
 
+	private final SeenRepository seenRepository;
+
 	@Autowired
-	private SeenRepository seenRepository;
+	public SeenListener(SeenRepository seenRepository) {
+		this.seenRepository = seenRepository;
+	}
 
 	@Override
 	public String getName() {
@@ -51,12 +55,12 @@ public class SeenListener extends CommandListener {
 	}
 	
 	@Override
-	public void onEvent(Event<PircBotX> ev) throws Exception {
+	public void onEvent(Event ev) throws Exception {
 		super.onEvent(ev);
 		PircBotX bot = ev.getBot();
-		String server = bot.getConfiguration().getServerHostname();
+		String server = bot.getServerHostname();
 		if (ev instanceof KickEvent) { 
-			KickEvent<PircBotX> ck = (KickEvent<PircBotX>) ev;
+			KickEvent ck = (KickEvent) ev;
 			Seen s = findSeen(ck.getUser().getNick(), server);
 			if (s == null) {
 				s = new Seen();
@@ -79,7 +83,7 @@ public class SeenListener extends CommandListener {
 			s.setTime(new Date(ck.getTimestamp()));
 			s = seenRepository.save(s);
 		} else if (ev instanceof PartEvent) {
-			PartEvent<PircBotX> cp = (PartEvent<PircBotX>) ev;
+			PartEvent cp = (PartEvent) ev;
 			Seen s = findSeen(cp.getUser().getNick(), server);
 			if (s == null) {
 				s = new Seen();
@@ -99,7 +103,7 @@ public class SeenListener extends CommandListener {
 		} else if (ev instanceof JoinEvent) {
 			
 		} else if (ev instanceof QuitEvent) {
-			QuitEvent<PircBotX> qe = (QuitEvent<PircBotX>) ev;
+			QuitEvent qe = (QuitEvent) ev;
 			Seen s = findSeen(qe.getUser().getNick(), server);
 			if (s == null) {
 				s = new Seen();
@@ -119,7 +123,7 @@ public class SeenListener extends CommandListener {
 			s.addDetail("quit.message", qe.getReason());
 			s = seenRepository.save(s);
 		} else if (ev instanceof NickChangeEvent) {
-			NickChangeEvent<PircBotX> nc = (NickChangeEvent<PircBotX>) ev;
+			NickChangeEvent nc = (NickChangeEvent) ev;
 			Seen s = findSeen(nc.getOldNick(), server);
 			if (s == null) {
 				s = new Seen();
@@ -142,13 +146,16 @@ public class SeenListener extends CommandListener {
 	}
 	
 	@Override
-	public void handleCommand(GenericMessageEvent<PircBotX> event, Command command, User user, String[] arguments) {
+	public void handleCommand(GenericMessageEvent event, Command command, User user, String[] arguments) {
 		String nick = null;
 		if (arguments.length == 1) {
 			nick = arguments[0];
 		}
 		if (nick != null) {
-			org.pircbotx.User user_ = event.getBot().getUserChannelDao().getUser(nick);
+			org.pircbotx.User user_ = null;
+			if (event.getBot().getUserChannelDao().containsUser(nick)) {
+				user_ = event.getBot().getUserChannelDao().getUser(nick);
+			}
 			Set<String> channels = null;
 			if (user_ != null) {
 				ImmutableSortedSet<Channel> chans = event.getBot().getUserChannelDao().getChannels(user_);
@@ -167,7 +174,7 @@ public class SeenListener extends CommandListener {
 			} else if (channels != null) {
 				event.respond(String.format(formats.getSeenOnlineFormat(), Colors.smartColoredNick(nick), channels));
 			} else {
-				String result = find(nick, event.getBot().getConfiguration().getServerHostname());
+				String result = find(nick, event.getBot().getServerHostname());
 				if (result == null) {
 					event.respond(String.format(formats.getSeenNotFoundFormat(), Colors.smartColoredNick(nick)));
 				} else {

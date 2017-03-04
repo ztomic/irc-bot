@@ -20,9 +20,7 @@ public final class Util {
 	}
 
 	public static boolean parseBool(String s) {
-		if (s == null)
-			return false;
-		return s.toUpperCase().startsWith("Y") || s.toUpperCase().equals("TRUE");
+		return s != null && (s.toUpperCase().startsWith("Y") || s.toUpperCase().equals("TRUE"));
 	}
 
 	public static String formatDate(Date d, String pattern) {

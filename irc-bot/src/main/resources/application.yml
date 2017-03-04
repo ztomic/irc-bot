@@ -6,31 +6,43 @@ pom:
 
 # Logging configuration
 logging:
-  path: logs
-  file: $artifactId$
-
+  history:
+    max: 30 # http://logback.qos.ch/manual/appenders.html#tbrpMaxHistory
+    clean-on-start: true # http://logback.qos.ch/manual/appenders.html#tbrpCleanHistoryOnStart
+  file: # Log file name, if not configured application will log to system out
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%30.30(%X{quiz.channel}@%X{pircbotx.server})]){magenta} %clr([%15.15t{14}]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wex"
+    file: "%d{HH:mm:ss.SSS} %5p ${PID:- } [%30.30(%X{quiz.channel}@%X{pircbotx.server})] [%t] --- %-40.40logger{39} : %m%n%wex"
+  level:
+    com.ztomic: trace
+    com.ztomic.ircbot.component.PersistenceThreadPoolExecutor: info
+    com.ztomic.ircbot.component.pircbotx.CustomThreadedListenerManager: info
+    org.pircbotx: trace
+    org.hibernate.SQL: info
+    
 # Database configuration
 spring:
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver 
-    url: jdbc:mysql:///quiz?autoReconnect=true&useUnicode=true
+    url: jdbc:h2:mem:test
     username: quizbot
     password: quizbot
     # http://www.codingpedia.org/ama/tomcat-jdbc-connection-pool-configuration-for-production-and-development/
-    initial-size: 5
-    max-active: 55
-    max-idle: 21
-    min-idle: 13
-    time-between-eviction-runs-millis: 34000
-    min-evictable-idle-time-millis: 55000
-    validation-query: SELECT 1
-    validation-interval: 34000
-    test-on-borrow: true
-    remove-abandoned: true
-    remove-abandoned-timeout: 55
-    initialize: false
     data: data.sql
-
+    tomcat:
+      initial-size: 5
+      max-active: 55
+      max-idle: 21
+      min-idle: 13
+      time-between-eviction-runs-millis: 34000
+      min-evictable-idle-time-millis: 55000
+      validation-query: SELECT 1
+      validation-interval: 34000
+      test-on-borrow: true
+      remove-abandoned: true
+      remove-abandoned-timeout: 55
+  main:
+    banner-mode: log
+      
 spring.jpa.hibernate.ddl-auto: update
 
 
@@ -44,20 +56,20 @@ irc:
   - hostname: callidus.sytes.net
     port: 6667
     auto-nick-change: true
-    encoding: WINDOWS-1250
-    name: Spark
+    encoding: UTF-8
+    name: SparkTest
     nick-serv-password: null
     login: callidus
     real-name: $artifactId$ by ztomic, v$version$
-    max-line-length: 350
+    max-line-length: 380
     message-limit: 30
     message-limit-interval: 1
     quiz: true
     channels:
-    - name: "#quiz"
+    - name: "#quiz-test"
       language: CROATIAN
       quiz: true
-    - name: "#quiz-en"
+    - name: "#quiz-en-test"
       language: ENGLISH
       quiz: true
       

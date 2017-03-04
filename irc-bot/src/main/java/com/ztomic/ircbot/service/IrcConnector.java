@@ -22,8 +22,6 @@ import org.springframework.util.StringUtils;
 
 import com.ztomic.ircbot.component.ExecutorFactory;
 import com.ztomic.ircbot.component.pircbotx.CustomBotFactory;
-import com.ztomic.ircbot.component.pircbotx.CustomMultiBotManager;
-import com.ztomic.ircbot.component.pircbotx.CustomPircBotX;
 import com.ztomic.ircbot.component.pircbotx.CustomThreadedListenerManager;
 import com.ztomic.ircbot.configuration.IrcConfiguration;
 import com.ztomic.ircbot.listener.quiz.QuizListener;
@@ -41,31 +39,31 @@ public class IrcConnector {
 	private String version;
 	
 	@Autowired
-	private List<ListenerAdapter<PircBotX>> listeners;
+	private List<ListenerAdapter> listeners;
 	
 	@Autowired
 	private ExecutorFactory executorFactory;
 
 	@Bean
-	public MultiBotManager<CustomPircBotX> createBot() throws IOException, IrcException {
+	public MultiBotManager createBot() throws IOException, IrcException {
 		if (ircConfig.isStartIdent()) {
 			IdentServer.startServer();
 		}
 		
-		MultiBotManager<CustomPircBotX> multiBotManager = new CustomMultiBotManager();
+		MultiBotManager multiBotManager = new MultiBotManager();
 		for (IrcConfiguration.ServerConfig server : ircConfig.getServers()) {
 			if (!server.isEnabled()) {
 				log.debug("Skipping disabled server {}", server);
 				continue;
 			}
-			Builder<PircBotX> builder = new Configuration.Builder<>()
+			Builder builder = new Configuration.Builder()
 					.setBotFactory(new CustomBotFactory(server.getMessageLimit(), server.getMessageLimitInterval()))
 					.setName(server.getName())
 					.setLogin(server.getLogin())
 					.setRealName(server.getRealName())
 					.setVersion(version)
 					.setAutoNickChange(server.isAutoNickChange())
-					.setServer(server.getHostname(), server.getPort())
+					.addServer(server.getHostname(), server.getPort())
 					.setMaxLineLength(server.getMaxLineLength())
 					.setAutoSplitMessage(true)
 					.setMessageDelay(0)
@@ -74,7 +72,7 @@ public class IrcConnector {
 			if (StringUtils.hasText(server.getNickServPassword())) {
 				builder.setNickservPassword(server.getNickServPassword());
 			}
-			builder.setListenerManager(new CustomThreadedListenerManager(executorFactory.createPersistenceThreadPoolExecutor(Integer.MAX_VALUE)));
+			builder.setListenerManager(new CustomThreadedListenerManager(executorFactory.createPersistenceThreadPoolExecutor("server-handler-" + server.getName(), Integer.MAX_VALUE)));
 			
 			for (IrcConfiguration.ChannelConfig channel : server.getChannels()) {
 				if (StringUtils.hasLength(channel.getPassword())) {
@@ -84,7 +82,7 @@ public class IrcConnector {
 				}
 			}
 			
-			for (ListenerAdapter<PircBotX> listener : listeners) {
+			for (ListenerAdapter listener : listeners) {
 				if (server.isQuiz() || !(listener instanceof QuizListener)) {
 					log.debug("Adding listener: {}",  listener);
 					builder.addListener(listener);
@@ -92,9 +90,9 @@ public class IrcConnector {
 					log.debug("Skipping quiz listener: {}", listener);
 				}
 			}
-			Configuration<PircBotX> configuration = builder.buildConfiguration();
+			Configuration configuration = builder.buildConfiguration();
 			log.debug("Adding bot for {}", server);
-			multiBotManager.addBot(new CustomPircBotX(configuration));
+			multiBotManager.addBot(new PircBotX(configuration));
 		}
 		
 		multiBotManager.start();

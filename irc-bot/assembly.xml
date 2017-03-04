@@ -10,31 +10,28 @@
 	<fileSets>
 		<fileSet>
 			<directory>${project.basedir}</directory>
-			<outputDirectory>/</outputDirectory>
+			<filtered>true</filtered>
+			<outputDirectory/>
 			<includes>
 				<include>README*</include>
 				<include>LICENSE*</include>
 				<include>NOTICE*</include>
-				<include>modules*</include>
-				<include>sh/*</include>
-				<include>config/*</include>
-				<include>webapp/**</include>
 			</includes>
 		</fileSet>
 		<fileSet>
-			<directory>${project.basedir}/target/classes</directory>
-			<outputDirectory>/config</outputDirectory>
+			<directory>${project.basedir}/deploy</directory>
+			<filtered>true</filtered>
+			<outputDirectory/>
 			<includes>
-				<include>application*.properties</include>
-				<include>application*.yml</include>
+				<include>**</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${project.build.directory}</directory>
+			<outputDirectory/>
+			<includes>
+				<include>*.jar</include>
 			</includes>
 		</fileSet>
 	</fileSets>
-
-	<dependencySets>
-		<dependencySet>
-			<outputDirectory>/libs</outputDirectory>
-			<unpack>false</unpack>
-		</dependencySet>
-	</dependencySets>
 </assembly>

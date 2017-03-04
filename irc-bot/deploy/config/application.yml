@@ -1,0 +1,39 @@
+# Logging configuration
+logging:
+  history:
+    max: 30 # http://logback.qos.ch/manual/appenders.html#tbrpMaxHistory
+    clean-on-start: true # http://logback.qos.ch/manual/appenders.html#tbrpCleanHistoryOnStart
+  file: logs/${pom.artifactId} # Log file name, if not configured application will log to system out
+    
+# Database configuration
+spring:
+  datasource:
+    url: jdbc:h2:mem:test
+    username: quizbot
+    password: quizbot
+    data: 
+   
+# IRC configuration
+# ----------------------------------------------------------
+
+irc:
+  start-ident: false
+  servers:
+  - hostname: callidus.sytes.net
+    port: 6667
+    auto-nick-change: true
+    encoding: UTF-8
+    name: SparkTest
+    nick-serv-password: null
+    login: callidus
+    max-line-length: 350
+    message-limit: 30
+    message-limit-interval: 1
+    quiz: true
+    channels:
+    - name: "#quiz-test"
+      language: CROATIAN
+      quiz: true
+    - name: "#quiz-en-test"
+      language: ENGLISH
+      quiz: true

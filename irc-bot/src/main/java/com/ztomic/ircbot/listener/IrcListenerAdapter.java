@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
-import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.types.GenericUserEvent;
 import org.slf4j.Logger;
@@ -19,7 +18,7 @@ import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.repository.UserRepository;
 
 @EnableConfigurationProperties({IrcConfiguration.class, MessagesConfiguration.class})
-public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
+public class IrcListenerAdapter extends ListenerAdapter {
 	
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 	
@@ -40,7 +39,7 @@ public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
 		return getClass().getSimpleName();
 	}
 
-	public User getUser(GenericUserEvent<PircBotX> event) {
+	public User getUser(GenericUserEvent event) {
 		try {
 			try {
 				SEMAPHORE.acquire();
@@ -49,13 +48,13 @@ public class IrcListenerAdapter extends ListenerAdapter<PircBotX> {
 			}
 			User user = null;
 			try {
-				user = userRepository.findByServerAndNick(event.getBot().getConfiguration().getServerHostname(), event.getUser().getNick());
+				user = userRepository.findByServerAndNickIgnoreCase(event.getBot().getServerHostname(), event.getUser().getNick());
 				if (user == null) {
 					user = new User();
 					user.setNick(event.getUser().getNick());
 					user.setHostname(event.getUser().getHostmask());
 					user.setIdent(event.getUser().getLogin());
-					user.setServer(event.getBot().getConfiguration().getServerHostname());
+					user.setServer(event.getBot().getServerHostname());
 					user = userRepository.saveAndFlush(user);
 				}
 			} catch (Throwable t) {

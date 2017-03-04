@@ -6,7 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.types.GenericMessageEvent;
 import org.springframework.util.StringUtils;
 
@@ -17,7 +16,7 @@ import com.ztomic.ircbot.util.Colors;
 public abstract class CommandListener extends IrcListenerAdapter {
 
 	@Override
-	public void onGenericMessage(GenericMessageEvent<PircBotX> event) throws Exception {
+	public void onGenericMessage(GenericMessageEvent event) throws Exception {
 		if (isCommand(event.getMessage())) {
 			String[] tokens = tokenize(event.getMessage());
 			User user = getUser(event);
@@ -105,9 +104,9 @@ public abstract class CommandListener extends IrcListenerAdapter {
 		};
 	}
 
-	public abstract void handleCommand(GenericMessageEvent<PircBotX> event, Command command, User user, String[] arguments);
+	public abstract void handleCommand(GenericMessageEvent event, Command command, User user, String[] arguments);
 	
-	public void handleMessage(GenericMessageEvent<PircBotX> event) {
+	public void handleMessage(GenericMessageEvent event) {
 		
 	}
 }

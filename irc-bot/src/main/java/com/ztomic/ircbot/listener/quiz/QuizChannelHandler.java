@@ -328,7 +328,7 @@ public class QuizChannelHandler implements Runnable {
 	}
 
 	public synchronized void reloadQuestions() {
-		this.questions = questionRepository.findByLanguage(language);
+		this.questions = questionRepository.findByLanguageIgnoreCase(language);
 		log.info("Reloaded questions. Question count: " + questions.size());
 	}
 
@@ -349,25 +349,25 @@ public class QuizChannelHandler implements Runnable {
 		return match;
 	}
 
-	public synchronized boolean handle(GenericMessageEvent<PircBotX> msg) {
+	public synchronized boolean handle(GenericMessageEvent msg) {
 		lastActivity = System.currentTimeMillis();
 		String message = msg.getMessage();
 		long time = (System.currentTimeMillis() - tstart);
 		if (lastQuestion != null && !answered) {
-			Player player = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(msg.getBot().getConfiguration().getServerHostname(), channel, msg.getUser().getNick());
+			Player player = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(msg.getBot().getServerHostname(), channel, msg.getUser().getNick());
 
 			if (player == null) {
 				player = new Player();
 				player.setChannel(channel);
 				player.setNick(msg.getUser().getNick());
 				player.setScore(0);
-				player.setServer(msg.getBot().getConfiguration().getServerHostname());
+				player.setServer(msg.getBot().getServerHostname());
 				player = playerRepository.saveAndFlush(player);
 			}
 
 			try {
 				for (String answer : lastQuestion.getAnswers()) {
-					User user = userRepository.findByServerAndNick(player.getServer(), player.getNick());
+					User user = userRepository.findByServerAndNickIgnoreCase(player.getServer(), player.getNick());
 					if (isAnswer(answer, message) || (user != null && user.getLevel() == User.Level.MASTER && patternMatches(answer, message))) {
 						answered = true;
 						boolean record = false;
@@ -451,7 +451,7 @@ public class QuizChannelHandler implements Runnable {
 			MDC.put("quiz.channel", channel);
 			thread = Thread.currentThread();
 			
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getConfiguration().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
 
 			if (players.size() >= 1) {
 				Collections.sort(players, Player.CMP_BY_SPEED_ASC);
@@ -476,7 +476,7 @@ public class QuizChannelHandler implements Runnable {
 				jump = false;
 				if (nextId > questions.size()) nextId = 0;
 				Question q = null;
-				if (nextId > 0) q = questionRepository.findOne((long)nextId);
+				if (nextId > 0) q = questionRepository.findById((long)nextId).orElse(null);
 				synchronized (questions) {
 					if (q == null)
 						q = questions.get(random.nextInt(questions.size()));
@@ -559,7 +559,7 @@ public class QuizChannelHandler implements Runnable {
 	}
 
 	@SuppressWarnings("incomplete-switch")
-	public synchronized void handleCommand(GenericMessageEvent<PircBotX> event, QuizListener.QuizCommand command, User user, String[] arguments) {
+	public synchronized void handleCommand(GenericMessageEvent event, QuizListener.QuizCommand command, User user, String[] arguments) {
 		List<String> args = Arrays.asList(arguments);
 		switch (command) {
 		case H:
@@ -595,7 +595,7 @@ public class QuizChannelHandler implements Runnable {
 			if (args.size() >= 1) {
 				nick = args.get(0);
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getConfiguration().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
 			Player player = null;
 			for (Player p : players) {
 				if (p.getNick().equalsIgnoreCase(nick)) {
@@ -641,7 +641,7 @@ public class QuizChannelHandler implements Runnable {
 			break;
 		case DATEVIDIM: {
 			if (event instanceof MessageEvent) {
-				MessageEvent<PircBotX> e = (MessageEvent<PircBotX>) event;
+				MessageEvent e = (MessageEvent) event;
 				if (args.size() >= 1) {
 					String nick2 = args.get(0);
 					int questions = (args.size() == 2 ? Util.parseInt(args.get(1), 10) : 10);
@@ -698,12 +698,12 @@ public class QuizChannelHandler implements Runnable {
 				} else {
 					found.setConfirmed(true);
 
-					Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getConfiguration().getServerHostname(), channel, found.nick1.nick);
+					Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.nick1.nick);
 					if (p1 != null) {
 						p1.incrementDuels();
 						p1 = playerRepository.save(p1);
 					}
-					Player p2 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getConfiguration().getServerHostname(), channel, found.nick2.nick);
+					Player p2 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.nick2.nick);
 					if (p2 != null) {
 						p2.incrementDuels();
 						p2 = playerRepository.save(p2);
@@ -765,10 +765,10 @@ public class QuizChannelHandler implements Runnable {
 			} else {
 				event.getBot().sendIRC().message(user.getNick(), "Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getConfiguration().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
 
 			if (players.isEmpty()) {
-				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getConfiguration().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
+				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
 				break;
 			}
 
@@ -832,14 +832,14 @@ public class QuizChannelHandler implements Runnable {
 			}
 
 			if (players.isEmpty()) {
-				event.respond(String.format("Nema fanatika (server:%s, kanal:%s) u kategoriji:%s!", Colors.paintString(Colors.BLUE, event.getBot().getConfiguration().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+				event.respond(String.format("Nema fanatika (server:%s, kanal:%s) u kategoriji:%s!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 				break;
 			}
 
 			List<Player> all = new ArrayList<>(players);
 
 			StringBuilder response = new StringBuilder();
-			response.append(String.format("Fanatici (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getConfiguration().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+			response.append(String.format("Fanatici (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 			int i = 1;
 			for (Player player : players) {
 				Collections.sort(all, Player.CMP_BY_SCORE);
@@ -873,10 +873,10 @@ public class QuizChannelHandler implements Runnable {
 			} else {
 				event.respond("Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getConfiguration().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
 
 			if (players.isEmpty()) {
-				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getConfiguration().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
+				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
 				break;
 			}
 
@@ -940,14 +940,14 @@ public class QuizChannelHandler implements Runnable {
 			}
 
 			if (players.isEmpty()) {
-				event.respond(String.format("Nema TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s!", Colors.paintString(Colors.BLUE, event.getBot().getConfiguration().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+				event.respond(String.format("Nema TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 				break;
 			}
 
 			List<Player> all = new ArrayList<>(players);
 
 			StringBuilder response = new StringBuilder();
-			response.append(String.format("TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getConfiguration().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+			response.append(String.format("TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 			int i = 1;
 			for (Player player : players) {
 				Collections.sort(all, Player.CMP_BY_SCORE);
@@ -1020,7 +1020,7 @@ public class QuizChannelHandler implements Runnable {
 	
 	public List<Player> cleanScore() {
 		log.debug("Resetting score...");
-		List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getConfiguration().getServerHostname(), channel);
+		List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
 		log.info("Loaded {} players", players.size());
 		int cnt = 0;
 		try {
@@ -1029,7 +1029,7 @@ public class QuizChannelHandler implements Runnable {
 					cnt++;
 				}
 			}
-			players = playerRepository.save(players);
+			players = playerRepository.saveAll(players);
 		} catch (Throwable t) {
 			log.error("Error resetting score", t);
 		} finally {
