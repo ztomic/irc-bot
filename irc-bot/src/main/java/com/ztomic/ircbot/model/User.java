@@ -9,8 +9,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import lombok.Data;
+
 @Entity
 @Table(name = "users")
+@Data
 public class User {
 
 	public enum Level {
@@ -49,66 +52,5 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	@Column
 	private Level level = Level.NEWBIE;
-
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public String getNick() {
-		return nick;
-	}
-
-	public void setNick(String nick) {
-		this.nick = nick;
-	}
-
-	public String getServer() {
-		return server;
-	}
-
-	public void setServer(String server) {
-		this.server = server;
-	}
-
-	public String getIdent() {
-		return ident;
-	}
-
-	public void setIdent(String ident) {
-		this.ident = ident;
-	}
-
-	public String getHostname() {
-		return hostname;
-	}
-
-	public void setHostname(String hostname) {
-		this.hostname = hostname;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public Level getLevel() {
-		return level;
-	}
-
-	public void setLevel(Level level) {
-		this.level = level;
-	}
-
-	@Override
-	public String toString() {
-		return String.format("User [id=%s, level=%s, nick=%s, ident=%s, hostname=%s, server=%s, password=%s]", id, level, nick, ident, hostname, server, password);
-	}
 
 }

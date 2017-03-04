@@ -10,9 +10,13 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.ztomic.ircbot.model.converter.StringListConverter;
+import lombok.Data;
+import lombok.ToString;
 
 @Table(name = "questions")
 @Entity
+@Data
+@ToString(exclude = "answers")
 public class Question {
 
 	@Id
@@ -32,50 +36,5 @@ public class Question {
 	@Column(name = "answers")
 	@Convert(converter = StringListConverter.class)
 	private StringList answers;
-
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public String getLanguage() {
-		return language;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public String getTheme() {
-		return theme;
-	}
-
-	public void setTheme(String theme) {
-		this.theme = theme;
-	}
-
-	public String getQuestion() {
-		return question;
-	}
-
-	public void setQuestion(String question) {
-		this.question = question;
-	}
-
-	public StringList getAnswers() {
-		return answers;
-	}
-	
-	public void setAnswers(StringList answers) {
-		this.answers = answers;
-	}
-
-	@Override
-	public String toString() {
-		return String.format("Question [id=%s, language=%s, theme=%s, question=%s, answers=%s", id, language, theme, question, getAnswers());
-	}
 
 }

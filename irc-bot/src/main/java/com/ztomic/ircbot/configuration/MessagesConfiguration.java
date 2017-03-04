@@ -1,6 +1,5 @@
 package com.ztomic.ircbot.configuration;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -8,26 +7,22 @@ import java.util.Random;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.ObjectUtils;
 
+import lombok.Data;
+
 @ConfigurationProperties(prefix = "msg", ignoreUnknownFields = false)
+@Data
 public class MessagesConfiguration {
 	
 	private static Random RANDOM = new Random();
 
 	private List<QuizMessages> quiz;
 	
-	public List<QuizMessages> getQuiz() {
-		return quiz;
-	}
-	
-	public void setQuiz(List<QuizMessages> quiz) {
-		this.quiz = quiz;
-	}
-	
 	public QuizMessages getQuizMessages(String language) {
 		Optional<QuizMessages> messages = quiz.stream().filter(m -> ObjectUtils.nullSafeEquals(language, m.getLanguage())).findFirst();
 		return messages.orElse(new QuizMessages());
 	}
 	
+	@Data
 	public static class QuizMessages {
 		
 		private String language = "CROATIAN";
@@ -87,80 +82,22 @@ public class MessagesConfiguration {
 		
 		private Formats formats = new Formats();
 		
-		public String getLanguage() {
-			return language;
-		}
-		
-		public void setLanguage(String language) {
-			this.language = language;
-		}
-		
-		public String[] getGreetBigPlayers() {
-			return greetBigPlayers;
-		}
-		
-		public void setGreetBigPlayers(String[] greetBigPlayers) {
-			this.greetBigPlayers = greetBigPlayers;
-		}
-		
 		public String getRandomGreetBigPlayer() {
 			return greetBigPlayers[RANDOM.nextInt(greetBigPlayers.length)];
-		}
-		
-		public String[] getGreetNormalPlayers() {
-			return greetNormalPlayers;
-		}
-		
-		public void setGreetNormalPlayers(String[] greetNormalPlayers) {
-			this.greetNormalPlayers = greetNormalPlayers;
 		}
 		
 		public String getRandomGreetNormalPlayer() {
 			return greetNormalPlayers[RANDOM.nextInt(greetNormalPlayers.length)];
 		}
 		
-		public String[] getGreetNewbies() {
-			return greetNewbies;
-		}
-		
-		public void setGreetNewbies(String[] greetNewbies) {
-			this.greetNewbies = greetNewbies;
-		}
-		
 		public String getRandomGreetNewbie() {
 			return greetNewbies[RANDOM.nextInt(greetNewbies.length)];
-		}
-		
-		public String[] getAnswerComments() {
-			return answerComments;
-		}
-		
-		public void setAnswerComments(String[] answerComments) {
-			this.answerComments = answerComments;
 		}
 		
 		public String getRandomAnswerComment() {
 			return answerComments[RANDOM.nextInt(answerComments.length)];
 		}
 		
-		public Formats getFormats() {
-			return formats;
-		}
-		
-		public void setFormats(Formats formats) {
-			this.formats = formats;
-		}
-
-		@Override
-		public String toString() {
-			return "QuizMessages [language=" + language + ", greetBigPlayers=" + Arrays.toString(greetBigPlayers) + ", greetNormalPlayers=" + Arrays.toString(greetNormalPlayers) + ", greetNewbies=" + Arrays.toString(greetNewbies) + ", answerComments=" + Arrays.toString(answerComments) + "]";
-		}
-		
-	}
-	
-	@Override
-	public String toString() {
-		return "MessagesConfiguration [quiz=" + quiz + "]";
 	}
 	
 }

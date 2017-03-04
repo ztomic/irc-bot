@@ -340,6 +340,9 @@ public class Colors {
 	}
 	
 	public static String paintString(String text) {
+		if (text == null) {
+			return text;
+		}
 		for (ColorTags c : ColorTags.values()) {
 			text = text.replaceAll(Pattern.quote(c.regex), String.valueOf(c.replacement));
 		}

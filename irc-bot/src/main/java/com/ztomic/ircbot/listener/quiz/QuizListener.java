@@ -159,7 +159,7 @@ public class QuizListener extends CommandListener {
 	
 	@PostConstruct
 	public void created() {
-		executor = executorFactory.createPersistenceThreadPoolExecutor(1000);
+		executor = executorFactory.createPersistenceThreadPoolExecutor("quiz-handler", 1000);
 	}
 	
 	@Scheduled(cron = "0 0 0 * * ?")
@@ -202,16 +202,16 @@ public class QuizListener extends CommandListener {
 	}
 
 	@Override
-	public void onJoin(JoinEvent<PircBotX> cj) {
+	public void onJoin(JoinEvent cj) {
 		if (!cj.getUser().getNick().equals(cj.getBot().getUserBot().getNick())) {
 			if (SEND_GREET_CFG) {
-				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(cj.getBot().getConfiguration().getServerHostname(), cj.getChannel().getName());
+				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(cj.getBot().getServerHostname(), cj.getChannel().getName());
 				Player player = players
 						.stream()
 						.filter(p -> p.getNick().equalsIgnoreCase(cj.getUser().getNick()))
 						.findFirst().orElse(null);
 				
-				QuizMessages messages = getQuizMessages(cj.getBot().getConfiguration().getServerHostname(), cj.getChannel().getName());
+				QuizMessages messages = getQuizMessages(cj.getBot().getServerHostname(), cj.getChannel().getName());
 				
 				if (player != null) {
 					Collections.sort(players, Player.CMP_BY_SCORE);
@@ -242,7 +242,7 @@ public class QuizListener extends CommandListener {
 			}
 		} else {
 			log.info("We have joined! " + cj);
-			IrcConfiguration.ChannelConfig channelConfig = ircConfiguration.getChannel(cj.getBot().getConfiguration().getServerHostname(), cj.getChannel().getName());
+			IrcConfiguration.ChannelConfig channelConfig = ircConfiguration.getChannel(cj.getBot().getServerHostname(), cj.getChannel().getName());
 			if (channelConfig != null && channelConfig.isQuiz()) {
 				startQuiz(cj.getBot(), cj.getChannel().getName(), null);
 			}
@@ -258,7 +258,7 @@ public class QuizListener extends CommandListener {
 	}
 	
 	@Override
-	public void handleMessage(GenericMessageEvent<PircBotX> msg) {
+	public void handleMessage(GenericMessageEvent msg) {
 		if (!(msg instanceof MessageEvent) && !(msg instanceof PrivateMessageEvent)) {
 			return;
 		}
@@ -267,18 +267,18 @@ public class QuizListener extends CommandListener {
 		}
 		
 		if (msg instanceof MessageEvent) {
-			QuizChannelHandler handler = getQuizChannelHandler(msg.getBot(), ((MessageEvent<PircBotX>) msg).getChannel().getName(), null, false);
+			QuizChannelHandler handler = getQuizChannelHandler(msg.getBot(), ((MessageEvent) msg).getChannel().getName(), null, false);
 			if (handler != null) {
 				handler.handle(msg);
 			} else {
-				log.debug("Not found quiz channel handler for key {}, valid keys are: {}", msg.getBot().getConfiguration().getServerHostname() + ":" + ((MessageEvent<PircBotX>) msg).getChannel().getName(), quizChannelHandlers.keySet());
+				log.debug("Not found quiz channel handler for key {}, valid keys are: {}", msg.getBot().getServerHostname() + ":" + ((MessageEvent) msg).getChannel().getName(), quizChannelHandlers.keySet());
 			}
 		}
 	}
 	
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void handleCommand(GenericMessageEvent<PircBotX> event, Command c, User user, String[] arguments) {
+	public void handleCommand(GenericMessageEvent event, Command c, User user, String[] arguments) {
 		QuizCommand command = (QuizCommand) c;
 		if (command == null) {
 			return;
@@ -418,7 +418,7 @@ public class QuizListener extends CommandListener {
 			if (quizChannelHandler != null) {
 				quizChannelHandler.handleCommand(event, command, user, arguments);
 			} else {
-				log.debug("Not found quiz channel handler for key {}, valid keys are: {}", event.getBot().getConfiguration().getServerHostname() + ":" + channel, quizChannelHandlers.keySet());
+				log.debug("Not found quiz channel handler for key {}, valid keys are: {}", event.getBot().getServerHostname() + ":" + channel, quizChannelHandlers.keySet());
 			}
 			break;
 		}
@@ -449,15 +449,15 @@ public class QuizListener extends CommandListener {
 	}
 	
 	public QuizChannelHandler removeQuizChannelHandler(PircBotX bot, String channel) {
-		String key = bot.getConfiguration().getServerHostname() + ":" + channel;
+		String key = bot.getServerHostname() + ":" + channel;
 		return quizChannelHandlers.remove(key);
 	}
 	
 	public QuizChannelHandler getQuizChannelHandler(PircBotX bot, String channel, String language, boolean create) {
-		String key = bot.getConfiguration().getServerHostname() + ":" + channel;
+		String key = bot.getServerHostname() + ":" + channel;
 		QuizChannelHandler quizChannelHandler = quizChannelHandlers.get(key);
 		if (!StringUtils.hasText(language)) {
-			IrcConfiguration.ChannelConfig chan = ircConfiguration.getChannel(bot.getConfiguration().getServerHostname(), channel);
+			IrcConfiguration.ChannelConfig chan = ircConfiguration.getChannel(bot.getServerHostname(), channel);
 			if (chan != null) {
 				language = chan.getLanguage();
 			}

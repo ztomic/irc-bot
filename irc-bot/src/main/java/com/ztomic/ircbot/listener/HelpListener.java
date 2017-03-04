@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.types.GenericMessageEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,9 +15,13 @@ import com.ztomic.ircbot.model.User.Level;
 @Component
 public class HelpListener extends CommandListener {
 	
+	private final List<CommandListener> listeners;
+
 	@Autowired
-	private List<CommandListener> listeners;
-	
+	public HelpListener(List<CommandListener> listeners) {
+		this.listeners = listeners;
+	}
+
 	@Override
 	public String getName() {
 		return "Help";
@@ -30,7 +33,7 @@ public class HelpListener extends CommandListener {
 	}
 
 	@Override
-	public void handleCommand(GenericMessageEvent<PircBotX> event, Command command, User user, String[] arguments) {
+	public void handleCommand(GenericMessageEvent event, Command command, User user, String[] arguments) {
 		boolean foundSome = false;
 		Formats formats = getQuizMessages().getFormats();
 		for (CommandListener listener : listeners) {

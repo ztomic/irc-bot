@@ -19,8 +19,7 @@ public class StringListConverter implements AttributeConverter<StringList, Strin
 	@Override
 	public String convertToDatabaseColumn(StringList attribute) {
 		if (attribute != null) {
-			return (String) attribute.stream()
-					.map(a -> a.toString())
+			return attribute.stream()
 					.collect(Collectors.joining("\n"));
 		}
 		return "";
@@ -31,7 +30,7 @@ public class StringListConverter implements AttributeConverter<StringList, Strin
 		StringList sl = new StringList();
 		if (dbData != null) {
 			sl.addAll(Arrays.asList(dbData.split("\n")));
-			sl.removeIf(i -> StringUtils.isEmpty(i));
+			sl.removeIf(StringUtils::isEmpty);
 		}
 		return sl;
 	}

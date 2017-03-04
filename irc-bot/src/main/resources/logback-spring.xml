@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+
+	<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+	<!-- Override CONSOLE_LOG_PATTERN and FILE_LOG_PATTERN with corresponding properties in application.[yml|properties] or Spring environment -->
+	<springProperty scope="context" name="CONFIGURED_CONSOLE_LOG_PATTERN" source="logging.pattern.console"/>
+	<springProperty scope="context" name="CONFIGURED_FILE_LOG_PATTERN" source="logging.pattern.file"/>
+	<springProperty scope="context" name="CONFIGURED_HISTORY_MAX" source="logging.history.max"/>
+	<springProperty scope="context" name="CONFIGURED_HISTORY_CLEAN_ON_START" source="logging.history.clean-on-start"/>
+	<property name="CONSOLE_LOG_PATTERN" value="${CONFIGURED_CONSOLE_LOG_PATTERN:-${CONSOLE_LOG_PATTERN}}"/>
+	<property name="FILE_LOG_PATTERN" value="${CONFIGURED_FILE_LOG_PATTERN:-${FILE_LOG_PATTERN}}" />
+	<!-- Delete log files older than this amount of days -->
+	<property name="HISTORY_MAX" value="${CONFIGURED_HISTORY_MAX:-5}"/>
+	<!-- Delete old log files on application start also -->
+	<property name="HISTORY_CLEAN_ON_START" value="${CONFIGURED_HISTORY_CLEAN_ON_START:-true}"/>
+
+	<!-- Create and use FILE appender only if LOG_FILE is defined (logging.file in application.[yml|properties] or Spring environment) -->
+	<if condition='isDefined("LOG_FILE")'>
+		<then>
+			<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<encoder>
+					<pattern>${FILE_LOG_PATTERN}</pattern>
+				</encoder>
+				<file>${LOG_FILE}.log</file>
+				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+					<fileNamePattern>${LOG_FILE}-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+					<maxHistory>${HISTORY_MAX}</maxHistory>
+					<cleanHistoryOnStart>${HISTORY_CLEAN_ON_START}</cleanHistoryOnStart>
+				</rollingPolicy>
+			</appender>
+
+			<root level="INFO">
+				<appender-ref ref="FILE" />
+			</root>
+		</then>
+		<else>
+			<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+
+			<root level="INFO">
+				<appender-ref ref="CONSOLE" />
+			</root>
+		</else>
+	</if>
+</configuration>

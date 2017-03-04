@@ -8,7 +8,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.pircbotx.Channel;
-import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.types.GenericMessageEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -68,7 +67,7 @@ public class CoreCommandListener extends CommandListener {
 	}
 
 	@Override
-	public void handleCommand(GenericMessageEvent<PircBotX> event, Command command, User user, String[] arguments) {
+	public void handleCommand(GenericMessageEvent event, Command command, User user, String[] arguments) {
 		if (!(command instanceof CoreCommand)) {
 			return;
 		}
@@ -166,7 +165,7 @@ public class CoreCommandListener extends CommandListener {
 			if (args.size() >= 1) {
 				_nick = args.get(0);
 			}
-			User _user = userRepository.findByServerAndNick(event.getBot().getConfiguration().getServerHostname(), _nick);
+			User _user = userRepository.findByServerAndNickIgnoreCase(event.getBot().getServerHostname(), _nick);
 			if (_user != null) {
 				event.getUser().send().message("UserInfo: " + _user);
 			} else {
@@ -203,7 +202,7 @@ public class CoreCommandListener extends CommandListener {
 				String _nick = args.get(0);
 				String _level = args.get(1);
 				if (StringUtils.hasText(_nick) && StringUtils.hasText(_level)) {
-					User _user = userRepository.findByServerAndNick(event.getBot().getConfiguration().getServerHostname(), _nick);
+					User _user = userRepository.findByServerAndNickIgnoreCase(event.getBot().getServerHostname(), _nick);
 					if (_user != null) {
 						Level _old = _user.getLevel();
 						Level level = Level.valueOf(_level, _user.getLevel());

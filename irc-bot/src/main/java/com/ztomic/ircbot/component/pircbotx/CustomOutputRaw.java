@@ -4,7 +4,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.pircbotx.PircBotX;
@@ -33,12 +32,7 @@ public class CustomOutputRaw extends OutputRaw {
     	double limit = messageLimit;
     	double interval = messageLimitInterval * 1000;
     	long now = System.currentTimeMillis();
-    	for (Iterator<Long> iterator = timestamps.iterator(); iterator.hasNext();) {
-    		Long time = iterator.next();
-			if (time == null || time < (now-interval-500)) {
-                iterator.remove();
-            }
-		}
+		timestamps.removeIf(time -> time == null || time < (now - interval - 500));
     	Collections.sort(timestamps);
     	if (timestamps.size() >= limit) {
     		long delay = (timestamps.get(0) + (long)interval + 501) - now;
@@ -78,6 +72,8 @@ public class CustomOutputRaw extends OutputRaw {
 			if (resetDelay)
 				//Reset the 
 				writeNowCondition.signalAll();
+		} catch (Exception e) {
+			throw new RuntimeException("Couldn't pause thread for message delay", e);
 		} finally {
 			writeLock.unlock();
 		}
