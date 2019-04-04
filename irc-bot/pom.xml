@@ -36,7 +36,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<resource.delimiter>$</resource.delimiter>
-		
+
 		<pircbotx.version>2.1</pircbotx.version>
 	</properties>
 
@@ -74,7 +74,7 @@
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
