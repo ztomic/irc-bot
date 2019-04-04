@@ -26,20 +26,7 @@ spring:
     url: jdbc:h2:mem:test
     username: quizbot
     password: quizbot
-    # http://www.codingpedia.org/ama/tomcat-jdbc-connection-pool-configuration-for-production-and-development/
     data: data.sql
-    tomcat:
-      initial-size: 5
-      max-active: 55
-      max-idle: 21
-      min-idle: 13
-      time-between-eviction-runs-millis: 34000
-      min-evictable-idle-time-millis: 55000
-      validation-query: SELECT 1
-      validation-interval: 34000
-      test-on-borrow: true
-      remove-abandoned: true
-      remove-abandoned-timeout: 55
   main:
     banner-mode: log
       

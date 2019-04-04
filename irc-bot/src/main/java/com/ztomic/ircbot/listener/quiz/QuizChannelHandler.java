@@ -2,25 +2,12 @@ package com.ztomic.ircbot.listener.quiz;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import org.pircbotx.Channel;
-import org.pircbotx.PircBotX;
-import org.pircbotx.hooks.events.MessageEvent;
-import org.pircbotx.hooks.types.GenericMessageEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 import com.ztomic.ircbot.configuration.Formats;
 import com.ztomic.ircbot.configuration.MessagesConfiguration;
@@ -33,7 +20,17 @@ import com.ztomic.ircbot.repository.PlayerRepository;
 import com.ztomic.ircbot.repository.QuestionRepository;
 import com.ztomic.ircbot.repository.UserRepository;
 import com.ztomic.ircbot.util.Colors;
+import com.ztomic.ircbot.util.TimeUtil;
 import com.ztomic.ircbot.util.Util;
+import org.pircbotx.Channel;
+import org.pircbotx.PircBotX;
+import org.pircbotx.hooks.events.MessageEvent;
+import org.pircbotx.hooks.types.GenericMessageEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 
 public class QuizChannelHandler implements Runnable {
@@ -49,15 +46,10 @@ public class QuizChannelHandler implements Runnable {
 		ZERO_RATED_REGEX = "[" + Pattern.quote(ZERO_RATED_REGEX.trim()) + "]";
 	}
 
-	@Autowired
-	private QuestionRepository questionRepository;
-	@Autowired
-	private PlayerRepository playerRepository;
-	@Autowired
-	private UserRepository userRepository;
-	
-	@Autowired
-	private MessagesConfiguration messagesConfiguration;
+	private final QuestionRepository questionRepository;
+	private final PlayerRepository playerRepository;
+	private final UserRepository userRepository;
+	private final MessagesConfiguration messagesConfiguration;
 	
 	private QuizMessages quizMessages;
 
@@ -66,19 +58,19 @@ public class QuizChannelHandler implements Runnable {
 	private String channel;
 	private String language;
 	
-	public Question lastQuestion;
+	private Question lastQuestion;
 	private long lastActivity = System.currentTimeMillis();
-	public String lastAnswer;
+	private String lastAnswer;
 	private Hint lastHint;
-	public long lastPlayer;
-	public int streak = 1;
-	public boolean answered = false;
-	public long points;
-	public long tstart;
-	public boolean alive;
+	private long lastPlayer;
+	private int streak = 1;
+	private boolean answered = false;
+	private long points;
+	private long tstart;
+	boolean alive;
 	
 	private List<Question> questions;
-	public int nextId = 0;
+	private int nextId = 0;
 	private static Random random = new Random();
 	private boolean jump;
 	
@@ -90,7 +82,11 @@ public class QuizChannelHandler implements Runnable {
 	
 	private Thread thread;
 
-	public QuizChannelHandler(PircBotX bot, QuizListener quizHandler, String channel, String language) {
+	public QuizChannelHandler(QuestionRepository questionRepository, PlayerRepository playerRepository, UserRepository userRepository, MessagesConfiguration messagesConfiguration, PircBotX bot, QuizListener quizHandler, String channel, String language) {
+		this.questionRepository = questionRepository;
+		this.playerRepository = playerRepository;
+		this.userRepository = userRepository;
+		this.messagesConfiguration = messagesConfiguration;
 		this.bot = bot;
 		this.quizListener = quizHandler;
 		this.channel = channel;
@@ -179,7 +175,7 @@ public class QuizChannelHandler implements Runnable {
 
 		private StringBuilder hint;
 
-		public Hint(String answer) {
+		Hint(String answer) {
 			this.answer = answer;
 			hint = new StringBuilder();
 			for (char c : answer.toCharArray()) {
@@ -228,11 +224,11 @@ public class QuizChannelHandler implements Runnable {
 			return pt;
 		}
 
-		public long getAnswerPoints() {
+		long getAnswerPoints() {
 			return Math.round(answerPoints);
 		}
 
-		public synchronized String getVowels() {
+		synchronized String getVowels() {
 			if (!sentV) {
 				StringBuilder vowels = new StringBuilder();
 				for (int i = 0; i < answer.length(); i++) {
@@ -252,7 +248,7 @@ public class QuizChannelHandler implements Runnable {
 			return null;
 		}
 
-		public synchronized String getFirstChar() {
+		synchronized String getFirstChar() {
 			if (!sentH) {
 				if (hint.charAt(0) == quizListener.HINT_CHAR_CFG) {
 					hint.replace(0, 1, String.valueOf(answer.charAt(0)));
@@ -263,7 +259,7 @@ public class QuizChannelHandler implements Runnable {
 			return null;
 		}
 
-		public synchronized String getLastChar() {
+		synchronized String getLastChar() {
 			if (!sentZ) {
 				if (hint.charAt(hint.length() - 1) == quizListener.HINT_CHAR_CFG) {
 					hint.replace(hint.length() - 1, hint.length(), String.valueOf(answer.charAt(answer.length() - 1)));
@@ -274,7 +270,7 @@ public class QuizChannelHandler implements Runnable {
 			return null;
 		}
 
-		public synchronized String getLevel3Hint() {
+		synchronized String getLevel3Hint() {
 			phase = 3;
 			for (int i = 0; i < answer.length(); i++) {
 				if (i % 2 == 0 || answer.charAt(i) == ' ') {
@@ -286,23 +282,24 @@ public class QuizChannelHandler implements Runnable {
 			return hint.toString();
 		}
 
-		public synchronized String getLevel2Hint() {
+		synchronized String getLevel2Hint() {
 			phase = 2;
 			getFirstChar();
 			return hint.toString();
 		}
 
-		public synchronized String getLevel1Hint() {
+		synchronized String getLevel1Hint() {
 			phase = 1;
 			return hint.toString();
 		}
 
-		public synchronized void merge(String text) {
+		synchronized void merge(String text) {
 			String oldHint = hint.toString();
 			text = text.toLowerCase();
 			for (int i = 0; i < text.length(); i++) {
-				if (i >= answer.length())
+				if (i >= answer.length()) {
 					break;
+				}
 				char c = text.charAt(i);
 				if (answer.toLowerCase().charAt(i) == c) {
 					if (hint.charAt(i) == quizListener.HINT_CHAR_CFG) {
@@ -317,22 +314,24 @@ public class QuizChannelHandler implements Runnable {
 		}
 	}
 
-	public static String getPointsString(long i) {
-		if (i < 0)
+	private static String getPointsString(long i) {
+		if (i < 0) {
 			i = -i;
+		}
 		i %= 100;
-		if (i >= 10 && i <= 20)
+		if (i >= 10 && i <= 20) {
 			return "bodova";
+		}
 		i %= 10;
 		return ((i >= 5 || i == 0) ? "bodova" : (i >= 2 ? "boda" : "bod"));
 	}
 
-	public synchronized void reloadQuestions() {
+	private synchronized void reloadQuestions() {
 		this.questions = questionRepository.findByLanguageIgnoreCase(language);
 		log.info("Reloaded questions. Question count: " + questions.size());
 	}
 
-	public boolean patternMatches(String answer, String message) {
+	private boolean patternMatches(String answer, String message) {
 		try {
 			return answer.trim().matches(message);
 		} catch (PatternSyntaxException e) {
@@ -349,7 +348,7 @@ public class QuizChannelHandler implements Runnable {
 		return match;
 	}
 
-	public synchronized boolean handle(GenericMessageEvent msg) {
+	synchronized boolean handle(GenericMessageEvent msg) {
 		lastActivity = System.currentTimeMillis();
 		String message = msg.getMessage();
 		long time = (System.currentTimeMillis() - tstart);
@@ -438,7 +437,7 @@ public class QuizChannelHandler implements Runnable {
 		return false;
 	}
 
-	public synchronized void stopQuiz() {
+	synchronized void stopQuiz() {
 		if (thread != null) {
 			thread.interrupt();
 		}
@@ -454,13 +453,13 @@ public class QuizChannelHandler implements Runnable {
 			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
 
 			if (players.size() >= 1) {
-				Collections.sort(players, Player.CMP_BY_SPEED_ASC);
+				players.sort(Player.CMP_BY_SPEED_ASC);
 				channelFastestTime = players.get(0).getFastestTime();
 				Player p = players.get(0);
 				if (p.getFastestTime() != 0) {
 					this.fastestPlayer = p.getId();
 				}
-				Collections.sort(players, Player.CMP_BY_STREAK_ASC);
+				players.sort(Player.CMP_BY_STREAK_ASC);
 				p = players.get(0);
 				if (p.getRowRecord() != 0) {
 					this.maxStreakPlayer = p.getId();
@@ -474,12 +473,17 @@ public class QuizChannelHandler implements Runnable {
 			alive = true;
 			while (alive && bot.isConnected()) {
 				jump = false;
-				if (nextId > questions.size()) nextId = 0;
+				if (nextId > questions.size()) {
+					nextId = 0;
+				}
 				Question q = null;
-				if (nextId > 0) q = questionRepository.findById((long)nextId).orElse(null);
+				if (nextId > 0) {
+					q = questionRepository.findById((long)nextId).orElse(null);
+				}
 				synchronized (questions) {
-					if (q == null)
+					if (q == null) {
 						q = questions.get(random.nextInt(questions.size()));
+					}
 				}
 				nextId = 0;
 				if (q != null) {
@@ -528,11 +532,7 @@ public class QuizChannelHandler implements Runnable {
 								points = Math.round(points / 2d);
 								sendMessage(channel, String.format(getFormats().getHint3Format(), lastHint.getLevel3Hint(), points, getPointsString(points)));
 								wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
-							} else {
-								answered = true;
 							}
-						} else {
-							answered = true;
 						}
 						lastQuestion = null;
 						if (!answered) {
@@ -604,19 +604,19 @@ public class QuizChannelHandler implements Runnable {
 				}
 			}
 			if (player != null) {
-				Collections.sort(players, Player.CMP_BY_SCORE);
+				players.sort(Player.CMP_BY_SCORE);
 				int scorePos = players.indexOf(player) + 1;
-				Collections.sort(players, Player.CMP_BY_MONTH_SCORE);
+				players.sort(Player.CMP_BY_MONTH_SCORE);
 				int monthPos = players.indexOf(player) + 1;
-				Collections.sort(players, Player.CMP_BY_WEEK_SCORE);
+				players.sort(Player.CMP_BY_WEEK_SCORE);
 				int weekPos = players.indexOf(player) + 1;
-				Collections.sort(players, Player.CMP_BY_SPEED_ASC);
+				players.sort(Player.CMP_BY_SPEED_ASC);
 				int speedPos = players.indexOf(player) + 1;
-				Collections.sort(players, Player.CMP_BY_STREAK_ASC);
+				players.sort(Player.CMP_BY_STREAK_ASC);
 				int streekPos = players.indexOf(player) + 1;
-				Collections.sort(players, Player.CMP_BY_DUELS);
+				players.sort(Player.CMP_BY_DUELS);
 				int duelsPos = players.indexOf(player) + 1;
-				Collections.sort(players, Player.CMP_BY_DUELS_WON);
+				players.sort(Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = players.indexOf(player) + 1;
 				event.respond(
 						String.format(getFormats().getJoinStatsFormat(), Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
@@ -696,7 +696,7 @@ public class QuizChannelHandler implements Runnable {
 					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "Nemate dvoboja koji cekaju potvrdu!");
 					else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
 				} else {
-					found.setConfirmed(true);
+					found.confirm();
 
 					Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.nick1.nick);
 					if (p1 != null) {
@@ -773,62 +773,30 @@ public class QuizChannelHandler implements Runnable {
 			}
 
 			if (category.equalsIgnoreCase("score")) {
-				Collections.sort(players, Player.CMP_BY_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_SCORE);
+				players.removeIf(player -> player.getScore() == 0);
 			} else if (category.equalsIgnoreCase("month")) {
-				Collections.sort(players, Player.CMP_BY_MONTH_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getMonthScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_MONTH_SCORE);
+				players.removeIf(player -> player.getMonthScore() == 0);
 			} else if (category.equalsIgnoreCase("week")) {
-				Collections.sort(players, Player.CMP_BY_WEEK_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getWeekScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_WEEK_SCORE);
+				players.removeIf(player -> player.getWeekScore() == 0);
 			} else if (category.equalsIgnoreCase("row")) {
-				Collections.sort(players, Player.CMP_BY_STREAK_ASC);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getRowRecord() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_STREAK_ASC);
+				players.removeIf(player -> player.getRowRecord() == 0);
 			} else if (category.equalsIgnoreCase("speed")) {
-				Collections.sort(players, Player.CMP_BY_SPEED_ASC);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getFastestTime() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_SPEED_ASC);
+				players.removeIf(player -> player.getFastestTime() == 0);
 			} else if (category.equalsIgnoreCase("duels")) {
-				Collections.sort(players, Player.CMP_BY_DUELS);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getDuels() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_DUELS);
+				players.removeIf(player -> player.getDuels() == 0);
 			} else if (category.equalsIgnoreCase("duels won")) {
-				Collections.sort(players, Player.CMP_BY_DUELS_WON);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getDuelsWon() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_DUELS_WON);
+				players.removeIf(player -> player.getDuelsWon() == 0);
 			} else {
 				category = "score";
-				Collections.sort(players, Player.CMP_BY_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_SCORE);
+				players.removeIf(player -> player.getScore() == 0);
 			}
 
 			if (players.isEmpty()) {
@@ -842,19 +810,19 @@ public class QuizChannelHandler implements Runnable {
 			response.append(String.format("Fanatici (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 			int i = 1;
 			for (Player player : players) {
-				Collections.sort(all, Player.CMP_BY_SCORE);
+				all.sort(Player.CMP_BY_SCORE);
 				int scorePos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_MONTH_SCORE);
+				all.sort(Player.CMP_BY_MONTH_SCORE);
 				int monthPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_WEEK_SCORE);
+				all.sort(Player.CMP_BY_WEEK_SCORE);
 				int weekPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_SPEED_ASC);
+				all.sort(Player.CMP_BY_SPEED_ASC);
 				int speedPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_STREAK_ASC);
+				all.sort(Player.CMP_BY_STREAK_ASC);
 				int streekPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_DUELS);
+				all.sort(Player.CMP_BY_DUELS);
 				int duelsPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_DUELS_WON);
+				all.sort(Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = all.indexOf(player) + 1;
 				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ")).append(String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 				if (i == 3) break;
@@ -881,62 +849,30 @@ public class QuizChannelHandler implements Runnable {
 			}
 
 			if (category.equalsIgnoreCase("score")) {
-				Collections.sort(players, Player.CMP_BY_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_SCORE);
+				players.removeIf(player -> player.getScore() == 0);
 			} else if (category.equalsIgnoreCase("month")) {
-				Collections.sort(players, Player.CMP_BY_MONTH_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getMonthScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_MONTH_SCORE);
+				players.removeIf(player -> player.getMonthScore() == 0);
 			} else if (category.equalsIgnoreCase("week")) {
-				Collections.sort(players, Player.CMP_BY_WEEK_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getWeekScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_WEEK_SCORE);
+				players.removeIf(player -> player.getWeekScore() == 0);
 			} else if (category.equalsIgnoreCase("row")) {
-				Collections.sort(players, Player.CMP_BY_STREAK_ASC);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getRowRecord() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_STREAK_ASC);
+				players.removeIf(player -> player.getRowRecord() == 0);
 			} else if (category.equalsIgnoreCase("speed")) {
-				Collections.sort(players, Player.CMP_BY_SPEED_ASC);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getFastestTime() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_SPEED_ASC);
+				players.removeIf(player -> player.getFastestTime() == 0);
 			} else if (category.equalsIgnoreCase("duels")) {
-				Collections.sort(players, Player.CMP_BY_DUELS);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getDuels() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_DUELS);
+				players.removeIf(player -> player.getDuels() == 0);
 			} else if (category.equalsIgnoreCase("duels won")) {
-				Collections.sort(players, Player.CMP_BY_DUELS_WON);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getDuelsWon() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_DUELS_WON);
+				players.removeIf(player -> player.getDuelsWon() == 0);
 			} else {
 				category = "score";
-				Collections.sort(players, Player.CMP_BY_SCORE);
-				for (Iterator<Player> iterator = players.iterator(); iterator.hasNext();) {
-					if (iterator.next().getScore() == 0) {
-						iterator.remove();
-					}
-				}
+				players.sort(Player.CMP_BY_SCORE);
+				players.removeIf(player -> player.getScore() == 0);
 			}
 
 			if (players.isEmpty()) {
@@ -950,19 +886,19 @@ public class QuizChannelHandler implements Runnable {
 			response.append(String.format("TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 			int i = 1;
 			for (Player player : players) {
-				Collections.sort(all, Player.CMP_BY_SCORE);
+				all.sort(Player.CMP_BY_SCORE);
 				int scorePos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_MONTH_SCORE);
+				all.sort(Player.CMP_BY_MONTH_SCORE);
 				int monthPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_WEEK_SCORE);
+				all.sort(Player.CMP_BY_WEEK_SCORE);
 				int weekPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_SPEED_ASC);
+				all.sort(Player.CMP_BY_SPEED_ASC);
 				int speedPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_STREAK_ASC);
+				all.sort(Player.CMP_BY_STREAK_ASC);
 				int streekPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_DUELS);
+				all.sort(Player.CMP_BY_DUELS);
 				int duelsPos = all.indexOf(player) + 1;
-				Collections.sort(all, Player.CMP_BY_DUELS_WON);
+				all.sort(Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = all.indexOf(player) + 1;
 				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ")).append(String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
 				if (i == 10) break;
@@ -1008,12 +944,8 @@ public class QuizChannelHandler implements Runnable {
 
 	private void cleanDuels() {
 		synchronized (duels) {
-			if (duels.isEmpty()) return;
-			for (Iterator<Duel> iterator = duels.iterator(); iterator.hasNext();) {
-				Duel duel = iterator.next();
-				if ((System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(QuizListener.DUEL_ACTIVITY_TIMEOUT_CFG)) > duel.lastActivity) {
-					iterator.remove();
-				}
+			if (!CollectionUtils.isEmpty(duels)) {
+				duels.removeIf(duel -> (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(QuizListener.DUEL_ACTIVITY_TIMEOUT_CFG)) > duel.lastActivity);
 			}
 		}
 	}
@@ -1041,7 +973,7 @@ public class QuizChannelHandler implements Runnable {
 	private void checkInactivity() {
 		if (quizListener.CHANNEL_TIMEOUT_MINUTES_CFG > 0) {
 			if (lastActivity < (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(quizListener.CHANNEL_TIMEOUT_MINUTES_CFG))) {
-				log.debug("Stopping quiz due to inactivity. Last activity on channel was at: " + Util.formatDate(new Date(lastActivity), null));
+				log.debug("Stopping quiz due to inactivity. Last activity on channel was at: " + TimeUtil.format(lastActivity));
 				sendMessage(channel, "Zaustavljam kviz.. Nitko se ne zeli igrati :(");
 				stopQuiz();
 			}
@@ -1064,7 +996,7 @@ public class QuizChannelHandler implements Runnable {
 		this.maxStreakPlayer = maxStreakPlayer;
 	}
 	
-	static class Duel {
+	class Duel {
 
 		PlayerDuelScore nick1;
 		PlayerDuelScore nick2;
@@ -1074,7 +1006,7 @@ public class QuizChannelHandler implements Runnable {
 		long startedAt;
 		long lastActivity;
 
-		public Duel(String nick1, String nick2, int questions) {
+		Duel(String nick1, String nick2, int questions) {
 			this.nick1 = new PlayerDuelScore(nick1);
 			this.nick2 = new PlayerDuelScore(nick2);
 			this.questions = questions;
@@ -1083,19 +1015,17 @@ public class QuizChannelHandler implements Runnable {
 			confirmed = false;
 		}
 
-		public void setLastActivity(long lastActivity) {
+		void setLastActivity(long lastActivity) {
 			this.lastActivity = lastActivity;
 		}
 
-		public void setConfirmed(boolean confirmed) {
-			this.confirmed = confirmed;
-			if (confirmed) {
-				this.startedAt = System.currentTimeMillis();
-				this.lastActivity = this.startedAt;
-			}
+		void confirm() {
+			this.confirmed = true;
+			this.startedAt = System.currentTimeMillis();
+			this.lastActivity = this.startedAt;
 		}
 
-		public PlayerDuelScore getDuelist(String nick) {
+		PlayerDuelScore getDuelist(String nick) {
 			if (nick1.nick.equalsIgnoreCase(nick)) return nick1;
 			if (nick2.nick.equalsIgnoreCase(nick)) return nick2;
 			return null;
@@ -1103,14 +1033,14 @@ public class QuizChannelHandler implements Runnable {
 
 		@Override
 		public String toString() {
-			return "Dvoboj - " + (confirmed  ? "startan: " + new Date(startedAt) : "iniciran: " + new Date(initiatedAt)) + ", broj pitanja: " + questions + ", stanje: " + this.nick1.nick + " (" + this.nick1.score + ") :" + this.nick2.nick + " (" + this.nick2.score + ")";
+			return "Dvoboj - " + (confirmed  ? "startan: " + TimeUtil.format(startedAt) : "iniciran: " + TimeUtil.format(initiatedAt)) + ", broj pitanja: " + questions + ", stanje: " + this.nick1.nick + " (" + this.nick1.score + ") :" + this.nick2.nick + " (" + this.nick2.score + ")";
 		}
 
 		boolean isFinished() {
 			return nick1.score >= questions || nick2.score >= questions;
 		}
 
-		static class PlayerDuelScore {
+		class PlayerDuelScore {
 			String nick;
 			int score;
 

@@ -7,6 +7,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.ztomic.ircbot.configuration.IrcConfiguration;
+import com.ztomic.ircbot.configuration.MessagesConfiguration;
+import com.ztomic.ircbot.repository.UserRepository;
 import org.pircbotx.Channel;
 import org.pircbotx.hooks.types.GenericMessageEvent;
 import org.springframework.stereotype.Component;
@@ -20,7 +23,7 @@ import com.ztomic.ircbot.util.Colors;
 
 @Component
 public class CoreCommandListener extends CommandListener {
-	
+
 	public enum CoreCommand implements Command {
 		NICK(Level.MASTER), 
 		JOIN(Level.MASTER), 
@@ -54,6 +57,10 @@ public class CoreCommandListener extends CommandListener {
 			return level;
 		}
 		
+	}
+
+	public CoreCommandListener(IrcConfiguration ircConfiguration, MessagesConfiguration messagesConfiguration, UserRepository userRepository) {
+		super(ircConfiguration, messagesConfiguration, userRepository);
 	}
 	
 	@Override

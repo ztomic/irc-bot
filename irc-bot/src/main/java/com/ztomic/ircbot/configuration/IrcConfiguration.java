@@ -5,9 +5,11 @@ import java.util.List;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
 @Data
+@Component
 @ConfigurationProperties(prefix = "irc", ignoreUnknownFields = false)
 public class IrcConfiguration {
 	

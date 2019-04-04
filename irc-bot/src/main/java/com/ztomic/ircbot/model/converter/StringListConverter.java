@@ -1,7 +1,6 @@
 package com.ztomic.ircbot.model.converter;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
@@ -19,8 +18,7 @@ public class StringListConverter implements AttributeConverter<StringList, Strin
 	@Override
 	public String convertToDatabaseColumn(StringList attribute) {
 		if (attribute != null) {
-			return attribute.stream()
-					.collect(Collectors.joining("\n"));
+			return String.join("\n", attribute);
 		}
 		return "";
 	}

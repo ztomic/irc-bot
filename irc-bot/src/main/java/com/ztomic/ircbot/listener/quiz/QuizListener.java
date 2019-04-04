@@ -15,22 +15,10 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 
-import org.pircbotx.PircBotX;
-import org.pircbotx.hooks.events.JoinEvent;
-import org.pircbotx.hooks.events.MessageEvent;
-import org.pircbotx.hooks.events.PrivateMessageEvent;
-import org.pircbotx.hooks.types.GenericMessageEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import com.ztomic.ircbot.component.ExecutorFactory;
 import com.ztomic.ircbot.configuration.IrcConfiguration;
 import com.ztomic.ircbot.configuration.IrcConfiguration.ChannelConfig;
+import com.ztomic.ircbot.configuration.MessagesConfiguration;
 import com.ztomic.ircbot.configuration.MessagesConfiguration.QuizMessages;
 import com.ztomic.ircbot.listener.Command;
 import com.ztomic.ircbot.listener.CommandListener;
@@ -38,21 +26,31 @@ import com.ztomic.ircbot.model.Player;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.PlayerRepository;
+import com.ztomic.ircbot.repository.QuestionRepository;
+import com.ztomic.ircbot.repository.UserRepository;
 import com.ztomic.ircbot.util.Colors;
 import com.ztomic.ircbot.util.Util;
+import org.pircbotx.PircBotX;
+import org.pircbotx.hooks.events.JoinEvent;
+import org.pircbotx.hooks.events.MessageEvent;
+import org.pircbotx.hooks.events.PrivateMessageEvent;
+import org.pircbotx.hooks.types.GenericMessageEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class QuizListener extends CommandListener {
 	
 	protected static Logger log = LoggerFactory.getLogger(QuizListener.class);
-	
-	@Autowired
-	private PlayerRepository playerRepository;
-	@Autowired
-	private ExecutorFactory executorFactory;
-	
-	@Autowired
-	private ConfigurableListableBeanFactory beanFactory;
+
+	private final QuestionRepository questionRepository;
+	private final PlayerRepository playerRepository;
+	private final ExecutorFactory executorFactory;
+	private final ConfigurableListableBeanFactory beanFactory;
 	
 	private final Map<String, QuizChannelHandler> quizChannelHandlers = Collections.synchronizedMap(new HashMap<>());
 
@@ -97,7 +95,15 @@ public class QuizListener extends CommandListener {
 	}
 	
 	private ExecutorService executor = null;
-	
+
+	public QuizListener(IrcConfiguration ircConfiguration, MessagesConfiguration messagesConfiguration, UserRepository userRepository, QuestionRepository questionRepository, PlayerRepository playerRepository, ExecutorFactory executorFactory, ConfigurableListableBeanFactory beanFactory) {
+		super(ircConfiguration, messagesConfiguration, userRepository);
+		this.questionRepository = questionRepository;
+		this.playerRepository = playerRepository;
+		this.executorFactory = executorFactory;
+		this.beanFactory = beanFactory;
+	}
+
 	protected enum QuizCommand implements Command {
 		H(User.Level.NEWBIE),
 		V(User.Level.NEWBIE),
@@ -214,19 +220,19 @@ public class QuizListener extends CommandListener {
 				QuizMessages messages = getQuizMessages(cj.getBot().getServerHostname(), cj.getChannel().getName());
 				
 				if (player != null) {
-					Collections.sort(players, Player.CMP_BY_SCORE);
+					players.sort(Player.CMP_BY_SCORE);
 					int scorePos = players.indexOf(player) + 1;
-					Collections.sort(players, Player.CMP_BY_MONTH_SCORE);
+					players.sort(Player.CMP_BY_MONTH_SCORE);
 					int monthPos = players.indexOf(player) + 1;
-					Collections.sort(players, Player.CMP_BY_WEEK_SCORE);
+					players.sort(Player.CMP_BY_WEEK_SCORE);
 					int weekPos = players.indexOf(player) + 1;
-					Collections.sort(players, Player.CMP_BY_SPEED_ASC);
+					players.sort(Player.CMP_BY_SPEED_ASC);
 					int speedPos = players.indexOf(player) + 1;
-					Collections.sort(players, Player.CMP_BY_STREAK_ASC);
+					players.sort(Player.CMP_BY_STREAK_ASC);
 					int streekPos = players.indexOf(player) + 1;
-					Collections.sort(players, Player.CMP_BY_DUELS);
+					players.sort(Player.CMP_BY_DUELS);
 					int duelsPos = players.indexOf(player) + 1;
-					Collections.sort(players, Player.CMP_BY_DUELS_WON);
+					players.sort(Player.CMP_BY_DUELS_WON);
 					int duelsWonPos = players.indexOf(player) + 1;
 					if (scorePos <= 10) {
 						cj.getBot().sendIRC().message(cj.getChannel().getName(), Colors.paintString(Colors.YELLOW, Colors.BLACK, messages.getRandomGreetBigPlayer()) + Colors.smartColoredNick(player.getNick()));
@@ -275,8 +281,7 @@ public class QuizListener extends CommandListener {
 			}
 		}
 	}
-	
-	@SuppressWarnings("rawtypes")
+
 	@Override
 	public void handleCommand(GenericMessageEvent event, Command c, User user, String[] arguments) {
 		QuizCommand command = (QuizCommand) c;
@@ -402,12 +407,7 @@ public class QuizListener extends CommandListener {
 				if (!isIgnoredNick(nick)) {
 					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] is not ignored");
 				} else {
-					for (Iterator<String> iter = IGNORED_NICKS_CFG.iterator(); iter.hasNext();) {
-						String n = iter.next();
-						if (n.equalsIgnoreCase(nick)) {
-							iter.remove();
-						}
-					}
+					IGNORED_NICKS_CFG.removeIf(n -> n.equalsIgnoreCase(nick));
 					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
 				}
 			}
@@ -428,12 +428,7 @@ public class QuizListener extends CommandListener {
 		synchronized (ignoredCommands) {
 			for (Iterator<Map<Command, Long>> iterator = ignoredCommands.values().iterator(); iterator.hasNext();) {
 				Map<Command, Long> next = iterator.next();
-				for (Iterator<Long> iterator2 = next.values().iterator(); iterator2.hasNext();) {
-					Long value = iterator2.next();
-					if (value <= System.currentTimeMillis()) {
-						iterator2.remove();
-					}
-				}
+				next.values().removeIf(value -> value <= System.currentTimeMillis());
 				if (next.isEmpty()) {
 					iterator.remove();
 				}
@@ -463,7 +458,7 @@ public class QuizListener extends CommandListener {
 			}
 		}
 		if (quizChannelHandler == null && create) {
-			quizChannelHandler = new QuizChannelHandler(bot, this, channel, language);
+			quizChannelHandler = new QuizChannelHandler(questionRepository, playerRepository, userRepository, messagesConfiguration, bot, this, channel, language);
 			beanFactory.autowireBean(quizChannelHandler);
 			quizChannelHandlers.put(key, quizChannelHandler);
 		}

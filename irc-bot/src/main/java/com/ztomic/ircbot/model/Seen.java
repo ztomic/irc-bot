@@ -1,6 +1,6 @@
 package com.ztomic.ircbot.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
 import javax.persistence.Column;
@@ -11,8 +11,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
 import lombok.Data;
 
@@ -51,9 +49,8 @@ public class Seen {
 	@Column
 	private HashMap<String, String> detail;
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column
-	private Date time;
+	private LocalDateTime time;
 
 	@Enumerated(EnumType.STRING)
 	@Column

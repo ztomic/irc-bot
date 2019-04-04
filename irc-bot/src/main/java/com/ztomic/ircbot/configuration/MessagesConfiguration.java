@@ -1,14 +1,14 @@
 package com.ztomic.ircbot.configuration;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
-import lombok.Data;
-
+@Component
 @ConfigurationProperties(prefix = "msg", ignoreUnknownFields = false)
 @Data
 public class MessagesConfiguration {
@@ -18,8 +18,10 @@ public class MessagesConfiguration {
 	private List<QuizMessages> quiz;
 	
 	public QuizMessages getQuizMessages(String language) {
-		Optional<QuizMessages> messages = quiz.stream().filter(m -> ObjectUtils.nullSafeEquals(language, m.getLanguage())).findFirst();
-		return messages.orElse(new QuizMessages());
+		return quiz.stream()
+				.filter(m -> ObjectUtils.nullSafeEquals(language, m.getLanguage()))
+				.findFirst()
+				.orElseGet(QuizMessages::new);
 	}
 	
 	@Data

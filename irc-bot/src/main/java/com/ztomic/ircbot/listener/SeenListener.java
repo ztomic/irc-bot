@@ -1,28 +1,27 @@
 package com.ztomic.ircbot.listener;
 
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import com.google.common.collect.ImmutableSortedSet;
 import com.ztomic.ircbot.configuration.Formats;
+import com.ztomic.ircbot.configuration.IrcConfiguration;
+import com.ztomic.ircbot.configuration.MessagesConfiguration;
 import com.ztomic.ircbot.model.Seen;
 import com.ztomic.ircbot.model.Seen.EventType;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.SeenRepository;
+import com.ztomic.ircbot.repository.UserRepository;
 import com.ztomic.ircbot.util.Colors;
+import com.ztomic.ircbot.util.TimeUtil;
 import org.pircbotx.Channel;
 import org.pircbotx.PircBotX;
+import org.pircbotx.exception.DaoException;
 import org.pircbotx.hooks.Event;
 import org.pircbotx.hooks.events.JoinEvent;
 import org.pircbotx.hooks.events.KickEvent;
@@ -30,6 +29,8 @@ import org.pircbotx.hooks.events.NickChangeEvent;
 import org.pircbotx.hooks.events.PartEvent;
 import org.pircbotx.hooks.events.QuitEvent;
 import org.pircbotx.hooks.types.GenericMessageEvent;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class SeenListener extends CommandListener {
@@ -39,8 +40,8 @@ public class SeenListener extends CommandListener {
 
 	private final SeenRepository seenRepository;
 
-	@Autowired
-	public SeenListener(SeenRepository seenRepository) {
+	public SeenListener(IrcConfiguration ircConfiguration, MessagesConfiguration messagesConfiguration, UserRepository userRepository, SeenRepository seenRepository) {
+		super(ircConfiguration, messagesConfiguration, userRepository);
 		this.seenRepository = seenRepository;
 	}
 
@@ -61,11 +62,11 @@ public class SeenListener extends CommandListener {
 		String server = bot.getServerHostname();
 		if (ev instanceof KickEvent) { 
 			KickEvent ck = (KickEvent) ev;
-			Seen s = findSeen(ck.getUser().getNick(), server);
+			org.pircbotx.User user = ck.getRecipient();
+			Seen s = findSeen(user.getNick(), server);
 			if (s == null) {
 				s = new Seen();
 			}
-			org.pircbotx.User user = ck.getRecipient();
 			s.setNick(user.getNick());
 			s.setName(user.getRealName());
 			s.setIdent(user.getLogin());
@@ -74,21 +75,23 @@ public class SeenListener extends CommandListener {
 			s.setType(EventType.Kick);
 			s.setChannel(ck.getChannel().getName());
 
-			if (s.getDetail() != null) s.getDetail().clear();
+			if (s.getDetail() != null) {
+				s.getDetail().clear();
+			}
 			s.addDetail("kicked.from.nick", ck.getUser().getNick());
 			s.addDetail("kicked.from.ident", ck.getUser().getLogin());
 			s.addDetail("kicked.from.host", ck.getUser().getHostmask());
 			s.addDetail("channel", ck.getChannel().getName());
 			s.addDetail("kicked.reason", ck.getReason());
-			s.setTime(new Date(ck.getTimestamp()));
+			s.setTime(TimeUtil.getLocalDateTime(ck.getTimestamp()));
 			s = seenRepository.save(s);
 		} else if (ev instanceof PartEvent) {
 			PartEvent cp = (PartEvent) ev;
-			Seen s = findSeen(cp.getUser().getNick(), server);
+			org.pircbotx.User user = cp.getUser();
+			Seen s = findSeen(user.getNick(), server);
 			if (s == null) {
 				s = new Seen();
 			}
-			org.pircbotx.User user = cp.getUser();
 			s.setNick(user.getNick());
 			s.setName(user.getRealName());
 			s.setIdent(user.getLogin());
@@ -96,7 +99,7 @@ public class SeenListener extends CommandListener {
 			s.setServer(server);
 			s.setType(EventType.Part);
 			s.setChannel(cp.getChannel().getName());
-			s.setTime(new Date(cp.getTimestamp()));
+			s.setTime(TimeUtil.getLocalDateTime(cp.getTimestamp()));
 			if (s.getDetail() != null) s.getDetail().clear();
 			s.addDetail("part.message", cp.getReason());
 			s = seenRepository.save(s);
@@ -104,12 +107,11 @@ public class SeenListener extends CommandListener {
 			
 		} else if (ev instanceof QuitEvent) {
 			QuitEvent qe = (QuitEvent) ev;
-			Seen s = findSeen(qe.getUser().getNick(), server);
+			org.pircbotx.User user = qe.getUser();
+			Seen s = findSeen(user.getNick(), server);
 			if (s == null) {
 				s = new Seen();
 			}
-			org.pircbotx.User user = qe.getUser();
-			Set<String> channels = new HashSet<>();
 			s.setNick(user.getNick());
 			s.setName(user.getRealName());
 			s.setIdent(user.getLogin());
@@ -117,19 +119,21 @@ public class SeenListener extends CommandListener {
 			s.setServer(server);
 			s.setType(EventType.Quit);
 			s.setChannel(null);
-			s.setTime(new Date(qe.getTimestamp()));
-			if (s.getDetail() != null) s.getDetail().clear();
+			s.setTime(TimeUtil.getLocalDateTime(qe.getTimestamp()));
+			if (s.getDetail() != null) {
+				s.getDetail().clear();
+			}
+			Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
 			s.addDetail("quit.channels", StringUtils.collectionToCommaDelimitedString(channels));
 			s.addDetail("quit.message", qe.getReason());
 			s = seenRepository.save(s);
 		} else if (ev instanceof NickChangeEvent) {
 			NickChangeEvent nc = (NickChangeEvent) ev;
+			org.pircbotx.User user = nc.getUser();
 			Seen s = findSeen(nc.getOldNick(), server);
 			if (s == null) {
 				s = new Seen();
 			}
-			org.pircbotx.User user = nc.getUser();
-			Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
 			s.setNick(nc.getOldNick());
 			s.setName(user.getRealName());
 			s.setIdent(user.getLogin());
@@ -137,9 +141,12 @@ public class SeenListener extends CommandListener {
 			s.setServer(server);
 			s.setType(EventType.Nick);
 			s.setChannel("");
-			s.setTime(new Date(nc.getTimestamp()));
-			if (s.getDetail() != null) s.getDetail().clear();
-			if (channels != null) s.addDetail("channels", StringUtils.collectionToCommaDelimitedString(channels));
+			s.setTime(TimeUtil.getLocalDateTime(nc.getTimestamp()));
+			Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
+			if (s.getDetail() != null){
+				s.getDetail().clear();
+			}
+			s.addDetail("channels", StringUtils.collectionToCommaDelimitedString(channels));
 			s.addDetail("new.nick", nc.getNewNick());
 			s = seenRepository.save(s);
 		}
@@ -154,7 +161,11 @@ public class SeenListener extends CommandListener {
 		if (nick != null) {
 			org.pircbotx.User user_ = null;
 			if (event.getBot().getUserChannelDao().containsUser(nick)) {
-				user_ = event.getBot().getUserChannelDao().getUser(nick);
+				try {
+					user_ = event.getBot().getUserChannelDao().getUser(nick);
+				} catch (DaoException e) {
+					// user is only in private users list
+				}
 			}
 			Set<String> channels = null;
 			if (user_ != null) {
@@ -198,17 +209,17 @@ public class SeenListener extends CommandListener {
 		}
 		Formats formats = getQuizMessages().getFormats();
 		if (entity.getType() == EventType.Part) {
-			return String.format(formats.getSeenPartFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getChannel(), entity.getDetail("part.message"));
+			return String.format(formats.getSeenPartFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getChannel(), entity.getDetail("part.message"));
 		}
 		if (entity.getType() == EventType.Nick) {
-			return String.format(formats.getSeenNickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getDetail("new.nick"));
+			return String.format(formats.getSeenNickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getDetail("new.nick"));
 		}
 		if (entity.getType() == EventType.Kick) {
 			String kicker = entity.getDetail("kicked.from.nick") + "!" + entity.getDetail("kicked.from.ident") + "@" + entity.getDetail("kicked.from.host");
-			return String.format(formats.getSeenKickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getChannel(), kicker, entity.getDetail("kicked.reason"));
+			return String.format(formats.getSeenKickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getChannel(), kicker, entity.getDetail("kicked.reason"));
 		}
 		if (entity.getType() == EventType.Quit) {
-			return String.format(formats.getSeenQuitFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), entity.getTime(), entity.getDetail("quit.message"));
+			return String.format(formats.getSeenQuitFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getDetail("quit.message"));
 		}
 
 		return null;

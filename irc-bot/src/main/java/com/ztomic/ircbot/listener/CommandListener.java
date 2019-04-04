@@ -6,17 +6,23 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.ztomic.ircbot.configuration.IrcConfiguration;
+import com.ztomic.ircbot.configuration.MessagesConfiguration;
+import com.ztomic.ircbot.model.User;
+import com.ztomic.ircbot.model.User.Level;
+import com.ztomic.ircbot.repository.UserRepository;
+import com.ztomic.ircbot.util.Colors;
 import org.pircbotx.hooks.types.GenericMessageEvent;
 import org.springframework.util.StringUtils;
 
-import com.ztomic.ircbot.model.User;
-import com.ztomic.ircbot.model.User.Level;
-import com.ztomic.ircbot.util.Colors;
-
 public abstract class CommandListener extends IrcListenerAdapter {
 
+	public CommandListener(IrcConfiguration ircConfiguration, MessagesConfiguration messagesConfiguration, UserRepository userRepository) {
+		super(ircConfiguration, messagesConfiguration, userRepository);
+	}
+
 	@Override
-	public void onGenericMessage(GenericMessageEvent event) throws Exception {
+	public void onGenericMessage(GenericMessageEvent event) {
 		if (isCommand(event.getMessage())) {
 			String[] tokens = tokenize(event.getMessage());
 			User user = getUser(event);

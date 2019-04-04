@@ -1,8 +1,7 @@
 package com.ztomic.ircbot.model;
 
-import java.util.Calendar;
+import java.time.LocalDateTime;
 import java.util.Comparator;
-import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,9 +9,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
+import com.ztomic.ircbot.util.TimeUtil;
 import lombok.Data;
 
 @Entity
@@ -63,9 +61,8 @@ public class Player {
 	@Column(name = "duels_won")
 	private int duelsWon;
 
-	@Temporal(TemporalType.TIMESTAMP)
 	@Column(name = "last_answered")
-	private Date lastAnswered;
+	private LocalDateTime lastAnswered;
 
 	public void incrementDuelsWon() {
 		this.duelsWon++;
@@ -77,31 +74,23 @@ public class Player {
 
 	public void incrementScore(long points) {
 		if (lastAnswered == null) {
-			lastAnswered = new Date();
+			lastAnswered = LocalDateTime.now();
 			weekScore = points;
 			monthScore = points;
 			score += points;
 			return;
 		}
-		Calendar weekStart = Calendar.getInstance();
-		weekStart.setFirstDayOfWeek(Calendar.MONDAY);
-		weekStart.set(Calendar.HOUR, 0);
-		weekStart.set(Calendar.MINUTE, 0);
-		weekStart.set(Calendar.SECOND, 0);
-		weekStart.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-
-		if (lastAnswered.getTime() >= weekStart.getTimeInMillis()) {
+		if (lastAnswered.isAfter(TimeUtil.getLocalDateTimeStartOfWeek())) {
 			weekScore += points;
 		} else {
 			weekScore = points;
 		}
-		weekStart.set(Calendar.DATE, 1);
-		if (lastAnswered.getTime() >= weekStart.getTimeInMillis()) {
+		if (lastAnswered.isAfter(TimeUtil.getLocalDateTimeStartOfMonth())) {
 			monthScore += points;
 		} else {
 			monthScore = points;
 		}
-		lastAnswered = new Date();
+		lastAnswered = LocalDateTime.now();
 		score += points;
 	}
 
@@ -113,21 +102,14 @@ public class Player {
 				monthScore = 0;
 				return true;
 			}
-			Calendar weekStart = Calendar.getInstance();
-			weekStart.setFirstDayOfWeek(Calendar.MONDAY);
-			weekStart.set(Calendar.HOUR, 0);
-			weekStart.set(Calendar.MINUTE, 0);
-			weekStart.set(Calendar.SECOND, 0);
-			weekStart.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 			if (weekScore != 0) {
-				if (lastAnswered.getTime() <= weekStart.getTimeInMillis()) {
+				if (lastAnswered.isBefore(TimeUtil.getLocalDateTimeStartOfWeek())) {
 					weekScore = 0;
 					reset = true;
 				}
 			}
-			weekStart.set(Calendar.DATE, 1);
 			if (monthScore != 0) {
-				if (lastAnswered.getTime() <= weekStart.getTimeInMillis()) {
+				if (lastAnswered.isBefore(TimeUtil.getLocalDateTimeStartOfMonth())) {
 					monthScore = 0;
 					reset = true;
 				}

@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.EntityManagerFactory;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,7 +13,6 @@ public class ExecutorFactory {
 	
 	private final EntityManagerFactory entityManagerFactory;
 
-	@Autowired
 	public ExecutorFactory(EntityManagerFactory entityManagerFactory) {
 		this.entityManagerFactory = entityManagerFactory;
 	}
