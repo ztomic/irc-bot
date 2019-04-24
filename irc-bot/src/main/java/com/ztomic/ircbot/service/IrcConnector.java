@@ -16,7 +16,7 @@ import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -28,13 +28,13 @@ public class IrcConnector {
 
 	private final IrcConfiguration ircConfig;
 	private final ExecutorFactory executorFactory;
-	private final String version;
+	private final BuildProperties buildProperties;
 	private final List<ListenerAdapter> listeners;
 
-	public IrcConnector(IrcConfiguration ircConfig, ExecutorFactory executorFactory, @Value("${pom.version}") String version, List<ListenerAdapter> listeners) {
+	public IrcConnector(IrcConfiguration ircConfig, ExecutorFactory executorFactory, BuildProperties buildProperties, List<ListenerAdapter> listeners) {
 		this.ircConfig = ircConfig;
 		this.executorFactory = executorFactory;
-		this.version = version;
+		this.buildProperties = buildProperties;
 		this.listeners = listeners;
 	}
 
@@ -55,7 +55,7 @@ public class IrcConnector {
 					.setName(server.getName())
 					.setLogin(server.getLogin())
 					.setRealName(server.getRealName())
-					.setVersion(version)
+					.setVersion(buildProperties.getVersion())
 					.setAutoNickChange(server.isAutoNickChange())
 					.addServer(server.getHostname(), server.getPort())
 					.setMaxLineLength(server.getMaxLineLength())

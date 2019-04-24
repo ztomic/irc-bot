@@ -385,7 +385,7 @@ public class QuizChannelHandler implements Runnable {
 						String comment = getQuizMessages().getRandomAnswerComment();
 						sendMessage(
 								channel,
-								Colors.paintString(Colors.BLUE, comment + ",") + Colors.smartColoredNick(player.getNick()) + Colors.paintString(Colors.BLUE, "! Odgovor je ->") + Colors.paintString(Colors.BOLD, Colors.paintString(Colors.DARK_BLUE, Colors.YELLOW, answer)) + Colors.paintString(Colors.BLUE, "<-. Vrijeme:") + Colors.paintString(Colors.DARK_GREEN, (time / 1000F)) + Colors.paintString(Colors.BLUE, "sec") + (record ? " (" + Colors.paintString(Colors.WHITE, Colors.RED, "OSOBNI REKORD!") + ")." : ".") + (hasStreak ? Colors.paintString(Colors.BLUE, "Niz:") + Colors.paintString(Colors.DARK_GREEN, streak) + Colors.paintString(Colors.BLUE, ".") : "") + Colors.paintString(Colors.BLUE, "Dobivate") + Colors.paintString(Colors.DARK_GREEN, points)
+								Colors.paintString(Colors.BLUE, comment + ",") + Colors.smartColoredNick(player.getNick()) + Colors.paintString(Colors.BLUE, "! Odgovor je ->") + Colors.paintBoldString(Colors.DARK_BLUE, Colors.YELLOW, " " + answer + " ") + Colors.paintString(Colors.BLUE, "<-. Vrijeme:") + Colors.paintString(Colors.DARK_GREEN, (time / 1000F)) + Colors.paintString(Colors.BLUE, "sec") + (record ? " (" + Colors.paintString(Colors.WHITE, Colors.RED, "OSOBNI REKORD!") + ")." : ".") + (hasStreak ? Colors.paintString(Colors.BLUE, "Niz:") + Colors.paintString(Colors.DARK_GREEN, streak) + Colors.paintString(Colors.BLUE, ".") : "") + Colors.paintString(Colors.BLUE, "Dobivate") + Colors.paintString(Colors.DARK_GREEN, points)
 								+ Colors.paintString(Colors.BLUE, getPointsString(points) + ".") + Colors.paintString(Colors.BLUE, "Novi score:") + Colors.paintString(Colors.DARK_GREEN, player.getScore()));
 						if (channelFastestTime == 0 || channelFastestTime > time) {
 							Player fastestPlayer = getFastestPlayer() > 0 ? playerRepository.getOne(getFastestPlayer()) : null;
@@ -450,7 +450,7 @@ public class QuizChannelHandler implements Runnable {
 			MDC.put("quiz.channel", channel);
 			thread = Thread.currentThread();
 			
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(bot.getServerHostname(), channel);
 
 			if (players.size() >= 1) {
 				players.sort(Player.CMP_BY_SPEED_ASC);
@@ -595,7 +595,7 @@ public class QuizChannelHandler implements Runnable {
 			if (args.size() >= 1) {
 				nick = args.get(0);
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(event.getBot().getServerHostname(), channel);
 			Player player = null;
 			for (Player p : players) {
 				if (p.getNick().equalsIgnoreCase(nick)) {
@@ -649,9 +649,9 @@ public class QuizChannelHandler implements Runnable {
 					if (user2 == null) {
 						event.getBot().sendIRC().message(user.getNick(), String.format("Igrac s nadimkom %s nije pronadjen na kanalu %s", Colors.smartColoredNick(nick2), Colors.paintString(Colors.RED, channel)));
 					} else if (user2.getNick().equalsIgnoreCase(user.getNick())) {
-						event.getBot().sendIRC().message(user.getNick(), "Pokusavate izazvati sami sebe na dvoboj?!");
+						event.getBot().sendIRC().message(user.getNick(), "{C}4Pokusavate izazvati sami sebe na dvoboj?!");
 					} else if (user2.getNick().equalsIgnoreCase(event.getBot().getUserBot().getNick())) {
-						event.getBot().sendIRC().message(user.getNick(), "Ne igraj se s vatrom!");
+						event.getBot().sendIRC().message(user.getNick(), "{C}4Ne igraj se s vatrom!");
 					} else {
 
 						synchronized (duels) {
@@ -693,7 +693,7 @@ public class QuizChannelHandler implements Runnable {
 					}
 				}
 				if (found == null) {
-					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "Nemate dvoboja koji cekaju potvrdu!");
+					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
 					else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
 				} else {
 					found.confirm();
@@ -729,7 +729,7 @@ public class QuizChannelHandler implements Runnable {
 					}
 				}
 				if (found == null) {
-					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "Nemate dvoboja koji cekaju potvrdu!");
+					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
 					else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
 				} else {
 					event.getBot().sendIRC().message(found.nick1.nick, Colors.smartColoredNick(found.nick2.nick)+ " je odbi[o|la] poziv na dvoboj.");
@@ -740,10 +740,10 @@ public class QuizChannelHandler implements Runnable {
 		}
 		case SVIDVOBOJI: {
 			if (duels.isEmpty()) {
-				event.getBot().sendIRC().message(user.getNick(), "Nema aktivnih dvoboja.");
+				event.getBot().sendIRC().message(user.getNick(), "{C}4Nema aktivnih dvoboja.");
 			} else {
 				synchronized (duels) {
-					event.getBot().sendIRC().message(user.getNick(), "Dvoboji na kanalu " + channel + ":");
+					event.getBot().sendIRC().message(user.getNick(), "{C}3Dvoboji na kanalu " + channel + ":");
 					for (Duel d : duels) {
 						event.getBot().sendIRC().message(user.getNick(), d.toString());
 					}
@@ -765,7 +765,7 @@ public class QuizChannelHandler implements Runnable {
 			} else {
 				event.getBot().sendIRC().message(user.getNick(), "Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(event.getBot().getServerHostname(), channel);
 
 			if (players.isEmpty()) {
 				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
@@ -841,7 +841,7 @@ public class QuizChannelHandler implements Runnable {
 			} else {
 				event.respond("Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(event.getBot().getServerHostname(), channel);
 
 			if (players.isEmpty()) {
 				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
@@ -952,7 +952,7 @@ public class QuizChannelHandler implements Runnable {
 	
 	public List<Player> cleanScore() {
 		log.debug("Resetting score...");
-		List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
+		List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(bot.getServerHostname(), channel);
 		log.info("Loaded {} players", players.size());
 		int cnt = 0;
 		try {

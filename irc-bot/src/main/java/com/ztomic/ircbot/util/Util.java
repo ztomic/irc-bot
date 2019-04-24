@@ -18,6 +18,14 @@ public final class Util {
 		}
 	}
 
+	public static long parseLong(String s, long def) {
+		try {
+			return NumberUtils.parseNumber(s, Long.class);
+		} catch (NumberFormatException nfe) {
+			return def;
+		}
+	}
+
 	public static boolean parseBool(String s) {
 		return s != null && (s.toUpperCase().startsWith("Y") || s.toUpperCase().equals("TRUE"));
 	}

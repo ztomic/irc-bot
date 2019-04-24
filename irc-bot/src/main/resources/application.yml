@@ -1,9 +1,3 @@
-pom:
-  groupId: $groupId$
-  artifactId: $artifactId$
-  version: $version$
-  name: $name$
-
 # Logging configuration
 logging:
   history:
@@ -23,14 +17,21 @@ logging:
 # Database configuration
 spring:
   datasource:
-    url: jdbc:h2:mem:test
+    #url: jdbc:h2:mem:test;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
+    url: jdbc:h2:./irc-bot;MODE=MYSQL;DATABASE_TO_LOWER=TRUE
     username: quizbot
     password: quizbot
     data: data.sql
+  datasourceX:
+    url: jdbc:mysql://dev-vm/irc_bot?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Europe/Zagreb
+    username: root
+    password:
+    platform: mysql
   main:
     banner-mode: log
-      
-spring.jpa.hibernate.ddl-auto: update
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 
 # ----------------------------------------------------------

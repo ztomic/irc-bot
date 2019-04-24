@@ -328,11 +328,15 @@ public class Colors {
 	}
 
 	public static String paintBoldString(int color, Object text) {
-		return COLOR + String.valueOf(color) + BOLD + text + BOLD + COLOR;
+		return COLOR + String.valueOf(color) + BOLD + text + BOLD + "" + COLOR;
+	}
+
+	public static String paintBoldString(int fg, int bg, Object text) {
+		return BOLD + "" + COLOR + fg + "," + bg + text + COLOR + "" + BOLD;
 	}
 
 	public static String paintString(int fg, int bg, Object text) {
-		return COLOR + fg + "," + bg + " " + text + " " + COLOR;
+		return COLOR + "" + fg + "," + bg + " " + text + " " + COLOR;
 	}
 
 	public static String paintString(int fg, Object text) {

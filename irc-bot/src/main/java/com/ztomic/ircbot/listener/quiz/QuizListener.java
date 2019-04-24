@@ -1,6 +1,7 @@
 package com.ztomic.ircbot.listener.quiz;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,9 +25,12 @@ import com.ztomic.ircbot.configuration.MessagesConfiguration.QuizMessages;
 import com.ztomic.ircbot.listener.Command;
 import com.ztomic.ircbot.listener.CommandListener;
 import com.ztomic.ircbot.model.Player;
+import com.ztomic.ircbot.model.Question;
+import com.ztomic.ircbot.model.QuestionError;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.PlayerRepository;
+import com.ztomic.ircbot.repository.QuestionErrorRepository;
 import com.ztomic.ircbot.repository.QuestionRepository;
 import com.ztomic.ircbot.repository.UserRepository;
 import com.ztomic.ircbot.util.Colors;
@@ -48,6 +53,7 @@ public class QuizListener extends CommandListener {
 	protected static Logger log = LoggerFactory.getLogger(QuizListener.class);
 
 	private final QuestionRepository questionRepository;
+	private final QuestionErrorRepository questionErrorRepository;
 	private final PlayerRepository playerRepository;
 	private final ExecutorFactory executorFactory;
 	private final ConfigurableListableBeanFactory beanFactory;
@@ -96,9 +102,10 @@ public class QuizListener extends CommandListener {
 	
 	private ExecutorService executor = null;
 
-	public QuizListener(IrcConfiguration ircConfiguration, MessagesConfiguration messagesConfiguration, UserRepository userRepository, QuestionRepository questionRepository, PlayerRepository playerRepository, ExecutorFactory executorFactory, ConfigurableListableBeanFactory beanFactory) {
+	public QuizListener(IrcConfiguration ircConfiguration, MessagesConfiguration messagesConfiguration, UserRepository userRepository, QuestionRepository questionRepository, QuestionErrorRepository questionErrorRepository, PlayerRepository playerRepository, ExecutorFactory executorFactory, ConfigurableListableBeanFactory beanFactory) {
 		super(ircConfiguration, messagesConfiguration, userRepository);
 		this.questionRepository = questionRepository;
+		this.questionErrorRepository = questionErrorRepository;
 		this.playerRepository = playerRepository;
 		this.executorFactory = executorFactory;
 		this.beanFactory = beanFactory;
@@ -142,7 +149,9 @@ public class QuizListener extends CommandListener {
 		GET(User.Level.MASTER),
 		SETNEXT(User.Level.MASTER),
 		DUMP(User.Level.MASTER),
-		LOAD(User.Level.MASTER);
+		LOAD(User.Level.MASTER),
+
+		ERROR(User.Level.MASTER);
 
 		User.Level level = Level.NEWBIE;
 
@@ -211,7 +220,7 @@ public class QuizListener extends CommandListener {
 	public void onJoin(JoinEvent cj) {
 		if (!cj.getUser().getNick().equals(cj.getBot().getUserBot().getNick())) {
 			if (SEND_GREET_CFG) {
-				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(cj.getBot().getServerHostname(), cj.getChannel().getName());
+				List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(cj.getBot().getServerHostname(), cj.getChannel().getName());
 				Player player = players
 						.stream()
 						.filter(p -> p.getNick().equalsIgnoreCase(cj.getUser().getNick()))
@@ -326,7 +335,7 @@ public class QuizListener extends CommandListener {
 		case STOP:
 			stopQuiz(event.getBot(), channel);
 			log.info("User " + user + " has stopped quiz at " + channel);
-			event.getBot().sendIRC().message(channel, "Kviz je zaustavljen.");
+			event.getBot().sendIRC().message(channel, "{C}4Kviz je zaustavljen.");
 			break;
 		case SET:
 			if (args.size() >= 2) {
@@ -366,7 +375,7 @@ public class QuizListener extends CommandListener {
 						}
 					}
 					if (!found) {
-						event.getBot().sendIRC().message(user.getNick(), "No config found. See GET command for available options.");
+						event.getBot().sendIRC().message(user.getNick(), "{C}4No config found. See GET command for available options.");
 					}
 				} catch (IllegalArgumentException | IllegalAccessException e) {
 					log.error("Error with setting field (SET cmd)..", e);
@@ -393,10 +402,10 @@ public class QuizListener extends CommandListener {
 			if (args.size() == 1) {
 				String nick = args.get(0).trim();
 				if (isIgnoredNick(nick)) {
-					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] is already ignored");
+					event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is already ignored");
 				} else {
 					IGNORED_NICKS_CFG.add(nick.trim());
-					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] added to ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
+					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] added to ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
 				}
 			}
 			break;
@@ -405,11 +414,38 @@ public class QuizListener extends CommandListener {
 			if (args.size() == 1) {
 				String nick = args.get(0).trim();
 				if (!isIgnoredNick(nick)) {
-					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] is not ignored");
+					event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is not ignored");
 				} else {
 					IGNORED_NICKS_CFG.removeIf(n -> n.equalsIgnoreCase(nick));
-					event.getBot().sendIRC().message(user.getNick(), "Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
+					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
 				}
+			}
+			break;
+		}
+		case ERROR: {
+			if (args.size() >= 2) {
+				log.info("User " + user + " is reporting error at question " + args);
+				long questionNumber = Util.parseLong(args.get(0), -1);
+				if (questionNumber != -1) {
+					Optional<Question> question = questionRepository.findById(questionNumber);
+					if (question.isPresent()) {
+						Question q = question.get();
+						String reason = String.join(" ", args.subList(1, args.size()));
+						QuestionError error = new QuestionError();
+						error.setQuestionId(q.getId());
+						error.setReason(reason);
+						error.setUserId(user.getId());
+						error.setTimeReported(LocalDateTime.now());
+						error = questionErrorRepository.save(error);
+						event.getBot().sendIRC().message(user.getNick(), "Vasa prijava broj " + Colors.paintString(Colors.BLUE, error.getId()) + " za pitanje " + String.format(getQuizMessages().getFormats().getQuestionFormat(), q.getId(), q.getTheme(), q.getQuestion()) + " sa razlogom " + Colors.paintString(Colors.RED, reason) + " je zabiljezena. Hvala!");
+					} else {
+						event.getBot().sendIRC().message(user.getNick(), "Pitanje sa brojem " + Colors.paintString(Colors.DARK_GREEN, questionNumber) + " nije pronađeno.");
+					}
+				} else {
+					event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + COMMAND_PREFIX_CFG + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
+				}
+			} else {
+				event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + COMMAND_PREFIX_CFG + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
 			}
 			break;
 		}

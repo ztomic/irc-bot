@@ -133,27 +133,27 @@ public class CoreCommandListener extends CommandListener {
 				ImmutableSortedSet<org.pircbotx.User> users = chan.getUsers();
 				if (users != null) {
 					Set<String> nicks = users.stream().map(org.pircbotx.User::getNick).collect(Collectors.toCollection(TreeSet::new));
-					event.getUser().send().message("Users on channel [" + channel + "]:\n" + formatCollection(nicks, "\n"));
+					event.getUser().send().message("{C}3Users on channel [" + channel + "]:\n" + formatCollection(nicks, "\n"));
 				}
 			} else {
 				for (Channel channel_ : event.getBot().getUserChannelDao().getAllChannels()) {
 					ImmutableSortedSet<org.pircbotx.User> users = channel_.getUsers();
 					if (users != null) {
 						Set<String> nicks = users.stream().map(org.pircbotx.User::getNick).collect(Collectors.toCollection(TreeSet::new));
-						event.getUser().send().message("Users on channel [" + channel_.getName() + "]:\n" + formatCollection(nicks, "\n"));
+						event.getUser().send().message("{C}3Users on channel [" + channel_.getName() + "]:\n" + formatCollection(nicks, "\n"));
 					}
 				}
 			}
 			break;
 		case SHUTDOWN:
 			for (Channel channel_ : event.getBot().getUserChannelDao().getAllChannels()) {
-				channel_.send().message("Shutting down...");
+				channel_.send().message("{C}4Shutting down...");
 			}
 			Application.close(false);
 			break;
 		case RESTART:
 			for (Channel channel_ : event.getBot().getUserChannelDao().getAllChannels()) {
-				channel_.send().message("Restarting...");
+				channel_.send().message("{C}4Restarting...");
 			}
 			Application.close(true);
 			break;
@@ -174,9 +174,9 @@ public class CoreCommandListener extends CommandListener {
 			}
 			User _user = userRepository.findByServerAndNickIgnoreCase(event.getBot().getServerHostname(), _nick);
 			if (_user != null) {
-				event.getUser().send().message("UserInfo: " + _user);
+				event.getUser().send().message("{C}3UserInfo: " + _user);
 			} else {
-				event.getUser().send().message("User with nick " + _nick + " not found.");
+				event.getUser().send().message("{C}4User with nick " + _nick + " not found.");
 			}
 			break;
 		}
@@ -194,11 +194,11 @@ public class CoreCommandListener extends CommandListener {
 						} catch (Throwable t) {
 							log.error("Error changing level to MASTER for user: " + user, t);
 						}
-						event.getUser().send().message("Changed level to MASTER.!");
+						event.getUser().send().message("{C}3Changed level to MASTER.!");
 					} else if (_nick.equals(user.getNick())) {
-						event.getUser().send().message("Invalid password!");
+						event.getUser().send().message("{C}4Invalid password!");
 					} else {
-						event.getUser().send().message("Invalid usage!");
+						event.getUser().send().message("{C}4Invalid usage!");
 					}
 				}
 			}
@@ -219,9 +219,9 @@ public class CoreCommandListener extends CommandListener {
 						} catch (Throwable t) {
 							log.error("Error changing level of user: " + _user, t);
 						}
-						event.getUser().send().message("Level for nick " + _nick + " changed from " + _old + " to " + level);
+						event.getUser().send().message("{C}3Level for nick " + _nick + " changed from " + _old + " to " + level);
 					} else {
-						event.getUser().send().message("Nick " + _nick + " not found.");
+						event.getUser().send().message("{C}4Nick " + _nick + " not found.");
 					}
 
 				}

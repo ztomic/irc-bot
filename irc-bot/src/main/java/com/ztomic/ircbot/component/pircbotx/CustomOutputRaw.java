@@ -4,15 +4,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import com.ztomic.ircbot.util.Colors;
 import org.pircbotx.PircBotX;
 import org.pircbotx.Utils;
 import org.pircbotx.output.OutputRaw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.ztomic.ircbot.util.Colors;
 
 public class CustomOutputRaw extends OutputRaw {
 
@@ -43,8 +45,9 @@ public class CustomOutputRaw extends OutputRaw {
 	
 	public void rawLine(String line) {
 		checkNotNull(line, "Line cannot be null");
-		if (!bot.isConnected())
+		if (!bot.isConnected()) {
 			throw new RuntimeException("Not connected to server");
+		}
 		writeLock.lock();
 		try {
 			//Block until we can send, taking into account a changing lastSentLine
@@ -61,8 +64,9 @@ public class CustomOutputRaw extends OutputRaw {
 	
 	public void rawLineNow(String line, boolean resetDelay) {
 		checkNotNull(line, "Line cannot be null");
-		if (!bot.isConnected())
+		if (!bot.isConnected()) {
 			throw new RuntimeException("Not connected to server");
+		}
 		writeLock.lock();
 		try {
 			line = Colors.paintString(line);
@@ -96,7 +100,7 @@ public class CustomOutputRaw extends OutputRaw {
 			} else {
 				//Too long, split it up
 				int maxMessageLength = realMaxLineLength - (prefix + suffix).length();
-				for (String messagePart : splitOnWords(m, maxMessageLength)) {
+				for (String messagePart : splitOnWordsWithColors(m, maxMessageLength)) {
 					String curMessagePart = prefix + messagePart + suffix;
 					rawLine(curMessagePart);
 				}
@@ -104,8 +108,31 @@ public class CustomOutputRaw extends OutputRaw {
 		}
 	}
 	
+	public static List<String> splitOnWordsWithColors(String text, int charLimit) {
+		List<String> parts = Pattern.compile("(?=" + Colors.COLOR + "\\d)").splitAsStream(text).collect(Collectors.toList());
+		if (parts.size() > 1) {
+			List<String> lines = new LinkedList<>();
+			while (!parts.isEmpty()) {
+				String line = "";
+				while (line.length() < charLimit && !parts.isEmpty()) {
+					if (line.length() + parts.get(0).length() > charLimit) {
+						break;
+					}
+					line += parts.remove(0);
+				}
+				lines.add(line);
+			}
+			if (!lines.isEmpty()) {
+				List<String> output = new LinkedList<>();
+				lines.forEach(line -> output.addAll(splitOnWords(line, charLimit)));
+				return output;
+			}
+		}
+		return splitOnWords(text, charLimit);
+	}
+
 	public static List<String> splitOnWords(String text, int charLimit) {
-		List<String> output = new ArrayList<>();
+		List<String> output = new LinkedList<>();
 		char[] chars = text.toCharArray();
 		boolean endOfString = false;
 		int start = 0;
