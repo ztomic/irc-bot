@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.google.common.collect.ImmutableSortedSet;
-import com.ztomic.ircbot.Application;
+import com.ztomic.ircbot.IrcBotApplication;
 import com.ztomic.ircbot.model.User;
 import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.util.Colors;
@@ -149,13 +149,13 @@ public class CoreCommandListener extends CommandListener {
 			for (Channel channel_ : event.getBot().getUserChannelDao().getAllChannels()) {
 				channel_.send().message("{C}4Shutting down...");
 			}
-			Application.close(false);
+			IrcBotApplication.close(false);
 			break;
 		case RESTART:
 			for (Channel channel_ : event.getBot().getUserChannelDao().getAllChannels()) {
 				channel_.send().message("{C}4Restarting...");
 			}
-			Application.close(true);
+			IrcBotApplication.close(true);
 			break;
 		case TEST: {
 			if (args.size() >= 1) {
@@ -192,7 +192,7 @@ public class CoreCommandListener extends CommandListener {
 							user.setLevel(Level.MASTER);
 							userRepository.saveAndFlush(user);
 						} catch (Throwable t) {
-							log.error("Error changing level to MASTER for user: " + user, t);
+							log.error("Error changing level to MASTER for user: {}", user, t);
 						}
 						event.getUser().send().message("{C}3Changed level to MASTER.!");
 					} else if (_nick.equals(user.getNick())) {
@@ -217,7 +217,7 @@ public class CoreCommandListener extends CommandListener {
 							_user.setLevel(level);
 							_user = userRepository.saveAndFlush(_user);
 						} catch (Throwable t) {
-							log.error("Error changing level of user: " + _user, t);
+							log.error("Error changing level of user: {}", _user, t);
 						}
 						event.getUser().send().message("{C}3Level for nick " + _nick + " changed from " + _old + " to " + level);
 					} else {

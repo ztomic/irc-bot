@@ -16,8 +16,12 @@ import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -38,12 +42,8 @@ public class IrcConnector {
 		this.listeners = listeners;
 	}
 
-	@Bean
-	public MultiBotManager createBot() {
-		if (ircConfig.isStartIdent()) {
-			IdentServer.startServer();
-		}
-		
+	@Bean(destroyMethod = "stop")
+	public MultiBotManager multiBotManager() {
 		MultiBotManager multiBotManager = new MultiBotManager();
 		for (IrcConfiguration.ServerConfig server : ircConfig.getServers()) {
 			if (!server.isEnabled()) {
@@ -88,11 +88,28 @@ public class IrcConnector {
 			log.debug("Adding bot for {}", server);
 			multiBotManager.addBot(new PircBotX(configuration));
 		}
-		
-		multiBotManager.start();
-		
-		log.info("All bots started.");
 
 		return multiBotManager;
+	}
+
+	@Component
+	class BotRunner {
+
+		private final MultiBotManager multiBotManager;
+
+		BotRunner(MultiBotManager multiBotManager) {
+			this.multiBotManager = multiBotManager;
+		}
+
+		@EventListener
+		public void start(ApplicationReadyEvent event) {
+			if (ircConfig.isStartIdent()) {
+				IdentServer.startServer();
+			}
+			multiBotManager.start();
+
+			log.info("All bots started.");
+		}
+
 	}
 }

@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 @Component
@@ -57,41 +58,13 @@ public class QuizListener extends CommandListener {
 	private final PlayerRepository playerRepository;
 	private final ExecutorFactory executorFactory;
 	private final ConfigurableListableBeanFactory beanFactory;
+	private final QuizSettings quizSettings;
 	
 	private final Map<String, QuizChannelHandler> quizChannelHandlers = Collections.synchronizedMap(new HashMap<>());
 
-	public int HINT_DELAY_SEC_CFG = 15;
-	public int QUESTION_DELAY_SEC_CFG = 2;
-	public char HINT_CHAR_CFG = '°';
-	public String COMMAND_PREFIX_CFG = "-";
-
 	public static final char[] VOWELS = { 'A', 'a', 'E', 'e', 'I', 'i', 'O', 'o', 'U', 'u', 'Y', 'y' };
 	public static final char[] ZERRO_RATED_CHARS = { '-', ',', '.', ';', ':', '/', '_', '+', ' ', '!', '?', '\\', '\'' };
-
-	public double FIRST_CHAR_POINTS_CFG = 0.25;
-	public double LAST_CHAR_POINTS_CFG = 0.25;
-	public double VOWEL_POINTS_CFG = 0.25;
-	public double NUMBER_POINTS_CFG = 1;
-	public double LETTER_POINTS_CFG = 0.5;
-	
 	public final int[] BONUS_FACTORS = {5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70};
-	
-	public int BONUS_RANDOM_CFG = 20;
-	public int BONUS_MATCH_CFG = 5;
-	
-	public int BONUS_ON_LENGTH_CFG = 35;
-	public int BONUS_ON_LENGTH_FACTOR_CFG = 10;
-	
-	public int SAME_CMD_DELAY_SEC_CFG = 15;
-	
-	public boolean SHOW_GUESSED_CFG = true;
-	public int SHOW_GUESSED_PHASE_CFG = 1;
-	/** in minutes */
-	public static int DUEL_ACTIVITY_TIMEOUT_CFG = 60;
-	public boolean SEND_GREET_CFG = true;
-	public List<String> IGNORED_NICKS_CFG = Arrays.asList("NickServ", "ChanServ", "MemoServ");
-	
-	public int CHANNEL_TIMEOUT_MINUTES_CFG = 0;
 	
 	private final Map<String, Map<Command, Long>> ignoredCommands = new HashMap<>();
 	
@@ -109,6 +82,7 @@ public class QuizListener extends CommandListener {
 		this.playerRepository = playerRepository;
 		this.executorFactory = executorFactory;
 		this.beanFactory = beanFactory;
+		this.quizSettings = new QuizSettings();
 	}
 
 	protected enum QuizCommand implements Command {
@@ -137,7 +111,7 @@ public class QuizListener extends CommandListener {
 		SCORE(null),
 		SVEO(null),
 		TOP10(User.Level.REGISTERED),
-		FANATICI(User.Level.REGISTERED),
+		TOP3(User.Level.REGISTERED),
 		
 		SAVESETTINGS(User.Level.MASTER),
 		LOADSETTINGS(User.Level.MASTER),
@@ -204,11 +178,11 @@ public class QuizListener extends CommandListener {
 	}
 	
 	public String getCommandPrefix() {
-		return COMMAND_PREFIX_CFG;
+		return quizSettings.getCommandPrefix();
 	}
 	
 	private boolean isIgnoredNick(String nick) {
-		for (String n : IGNORED_NICKS_CFG) {
+		for (String n : quizSettings.getIgnoredNicks()) {
 			if (n.equalsIgnoreCase(nick)) {
 				return true;
 			}
@@ -219,7 +193,7 @@ public class QuizListener extends CommandListener {
 	@Override
 	public void onJoin(JoinEvent cj) {
 		if (!cj.getUser().getNick().equals(cj.getBot().getUserBot().getNick())) {
-			if (SEND_GREET_CFG) {
+			if (quizSettings.isSendGreet()) {
 				List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(cj.getBot().getServerHostname(), cj.getChannel().getName());
 				Player player = players
 						.stream()
@@ -256,7 +230,7 @@ public class QuizListener extends CommandListener {
 				}
 			}
 		} else {
-			log.info("We have joined! " + cj);
+			log.info("I have joined! {}", cj);
 			IrcConfiguration.ChannelConfig channelConfig = ircConfiguration.getChannel(cj.getBot().getServerHostname(), cj.getChannel().getName());
 			if (channelConfig != null && channelConfig.isQuiz()) {
 				startQuiz(cj.getBot(), cj.getChannel().getName(), null);
@@ -311,15 +285,15 @@ public class QuizListener extends CommandListener {
 				if (map != null) {
 					Long time = map.get(command);
 					if (time != null && time >= System.currentTimeMillis()) {
-						log.debug("Ignoring user's [" + user + "] command [" + command + "] with arguments [" + args + "] due to possible spam!");
+						log.debug("Ignoring user's [{}] command [{}] with arguments [{}] due to possible spam!", user, command, args);
 						return;
 					} else {
-						map.put(command, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(SAME_CMD_DELAY_SEC_CFG));
+						map.put(command, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(quizSettings.getSameCmdDelaySec()));
 					}
 				} else {
 					map = new HashMap<>();
 					ignoredCommands.put(user.getNick().toLowerCase(), map);
-					map.put(command, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(SAME_CMD_DELAY_SEC_CFG));
+					map.put(command, System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(quizSettings.getSameCmdDelaySec()));
 				}
 			}
 		}
@@ -334,7 +308,7 @@ public class QuizListener extends CommandListener {
 			break;
 		case STOP:
 			stopQuiz(event.getBot(), channel);
-			log.info("User " + user + " has stopped quiz at " + channel);
+			log.info("User {} has stopped quiz at {}", user, channel);
 			event.getBot().sendIRC().message(channel, "{C}4Kviz je zaustavljen.");
 			break;
 		case SET:
@@ -342,40 +316,35 @@ public class QuizListener extends CommandListener {
 				String param = args.get(0);
 				String value = args.get(1);
 				try {
-					boolean found = false;
 					if (StringUtils.hasText(value)) {
-						for (Field f : this.getClass().getFields()) {
-							if (f.getName().equalsIgnoreCase(param + "_CFG")) {
-								Object old = f.get(this);
-								if (f.getType() == int.class || f.getType() == Integer.class) {
-
-									int _value = Util.parseInt(value, f.getInt(this));
-									f.setInt(this, _value);
-								} else if (f.getType() == double.class || f.getType() == Double.class) {
-									double _value = 0d;
-									try {
-										_value = Double.parseDouble(value);
-									} catch (NumberFormatException ne) {
-										_value = f.getDouble(this);
-									}
-									f.setDouble(this, _value);
-								} else if (f.getType() == String.class) {
-									f.set(this, value);
-								} else if (f.getType() == char.class || f.getType() == Character.class) {
-									f.setChar(this, value.charAt(0));
-								} else if (f.getType() == boolean.class || f.getType() == Boolean.class) {
-									f.setBoolean(this, Util.parseBool(value));
-								} else if (List.class.isAssignableFrom(f.getType())) {
-									f.set(this, Util.parseList(value, ","));
+						Field f = ReflectionUtils.findField(quizSettings.getClass(), param);
+						if (f != null) {
+							ReflectionUtils.makeAccessible(f);
+							Object old = ReflectionUtils.getField(f, quizSettings);
+							if (f.getType() == int.class || f.getType() == Integer.class) {
+								int _value = Util.parseInt(value, f.getInt(quizSettings));
+								f.setInt(quizSettings, _value);
+							} else if (f.getType() == double.class || f.getType() == Double.class) {
+								double _value = 0d;
+								try {
+									_value = Double.parseDouble(value);
+								} catch (NumberFormatException ne) {
+									_value = f.getDouble(quizSettings);
 								}
-								found = true;
-								event.getBot().sendIRC().message(user.getNick(), String.format(getQuizMessages().getFormats().getChangedSettingFormat(), param, old, f.get(this)));
-								break;
+								f.setDouble(quizSettings, _value);
+							} else if (f.getType() == String.class) {
+								f.set(quizSettings, value);
+							} else if (f.getType() == char.class || f.getType() == Character.class) {
+								f.setChar(quizSettings, value.charAt(0));
+							} else if (f.getType() == boolean.class || f.getType() == Boolean.class) {
+								f.setBoolean(quizSettings, Util.parseBool(value));
+							} else if (List.class.isAssignableFrom(f.getType())) {
+								f.set(quizSettings, Util.parseList(value, ","));
 							}
+							event.getBot().sendIRC().message(user.getNick(), String.format(getQuizMessages().getFormats().getChangedSettingFormat(), param, old, f.get(quizSettings)));
+						} else {
+							event.getBot().sendIRC().message(user.getNick(), "{C}4No config{C}3 " + param + " {C}4found. See GET command for available options.");
 						}
-					}
-					if (!found) {
-						event.getBot().sendIRC().message(user.getNick(), "{C}4No config found. See GET command for available options.");
 					}
 				} catch (IllegalArgumentException | IllegalAccessException e) {
 					log.error("Error with setting field (SET cmd)..", e);
@@ -385,15 +354,14 @@ public class QuizListener extends CommandListener {
 			break;
 		case GET:
 			List<String> resp = new ArrayList<>();
-			for (Field f : this.getClass().getFields()) {
-				if (f.getName().endsWith("_CFG")) {
-					f.setAccessible(true);
-					try {
-						resp.add(Colors.paintString(Colors.BLUE, f.getName().substring(0, f.getName().indexOf("_CFG"))) + " (" + Colors.paintString(Colors.DARK_GREEN, f.getType().getSimpleName()) + ") =" + Colors.paintString(Colors.RED, f.get(this)));
-					} catch (Throwable t) {
-					}
+			ReflectionUtils.doWithFields(quizSettings.getClass(), f -> {
+				try {
+					ReflectionUtils.makeAccessible(f);
+					resp.add(Colors.paintString(Colors.BLUE, f.getName()) + " (" + Colors.paintString(Colors.DARK_GREEN, f.getType().getSimpleName()) + ") =" + Colors.paintString(Colors.RED, f.get(quizSettings)));
+				} catch (Throwable t) {
+					//
 				}
-			}
+			});
 			if (!resp.isEmpty()) {
 				event.getBot().sendIRC().message(user.getNick(), formatCollection(resp, "; "));
 			}
@@ -404,8 +372,8 @@ public class QuizListener extends CommandListener {
 				if (isIgnoredNick(nick)) {
 					event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is already ignored");
 				} else {
-					IGNORED_NICKS_CFG.add(nick.trim());
-					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] added to ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
+					quizSettings.getIgnoredNicks().add(nick.trim());
+					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] added to ignore list. New list: " + formatCollection(quizSettings.getIgnoredNicks(), ","));
 				}
 			}
 			break;
@@ -416,15 +384,15 @@ public class QuizListener extends CommandListener {
 				if (!isIgnoredNick(nick)) {
 					event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is not ignored");
 				} else {
-					IGNORED_NICKS_CFG.removeIf(n -> n.equalsIgnoreCase(nick));
-					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(IGNORED_NICKS_CFG, ","));
+					quizSettings.getIgnoredNicks().removeIf(n -> n.equalsIgnoreCase(nick));
+					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(quizSettings.getIgnoredNicks(), ","));
 				}
 			}
 			break;
 		}
 		case ERROR: {
 			if (args.size() >= 2) {
-				log.info("User " + user + " is reporting error at question " + args);
+				log.info("User {} is reporting error at question {}", user, args);
 				long questionNumber = Util.parseLong(args.get(0), -1);
 				if (questionNumber != -1) {
 					Optional<Question> question = questionRepository.findById(questionNumber);
@@ -442,10 +410,10 @@ public class QuizListener extends CommandListener {
 						event.getBot().sendIRC().message(user.getNick(), "Pitanje sa brojem " + Colors.paintString(Colors.DARK_GREEN, questionNumber) + " nije pronađeno.");
 					}
 				} else {
-					event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + COMMAND_PREFIX_CFG + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
+					event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + getCommandPrefix() + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
 				}
 			} else {
-				event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + COMMAND_PREFIX_CFG + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
+				event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + getCommandPrefix() + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
 			}
 			break;
 		}
@@ -494,7 +462,7 @@ public class QuizListener extends CommandListener {
 			}
 		}
 		if (quizChannelHandler == null && create) {
-			quizChannelHandler = new QuizChannelHandler(questionRepository, playerRepository, userRepository, messagesConfiguration, bot, this, channel, language);
+			quizChannelHandler = new QuizChannelHandler(quizSettings, questionRepository, playerRepository, userRepository, messagesConfiguration, bot, this, channel, language);
 			beanFactory.autowireBean(quizChannelHandler);
 			quizChannelHandlers.put(key, quizChannelHandler);
 		}

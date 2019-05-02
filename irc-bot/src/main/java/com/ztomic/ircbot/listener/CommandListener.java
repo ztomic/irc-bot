@@ -29,7 +29,7 @@ public abstract class CommandListener extends IrcListenerAdapter {
 			Command command = getCommand(user, tokens);
 			if (command != null) {
 				String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
-				log.debug("User [" + user + "] is calling command [" + command + "] with arguments " + Arrays.toString(args) + "");
+				log.debug("User [{}] is calling command [{}] with arguments {}", user, command, Arrays.toString(args));
 				if (!isAllowed(command, user)) {
 					event.respond(Colors.paintString(Colors.RED, "You're not allowed to execute command: " + command + ", required level is: " + command.getLevel() + ", you have: " + user.getLevel()));
 					return;

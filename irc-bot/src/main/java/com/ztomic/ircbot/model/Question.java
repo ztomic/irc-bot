@@ -2,6 +2,8 @@ package com.ztomic.ircbot.model;
 
 import static javax.persistence.GenerationType.IDENTITY;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -35,6 +37,6 @@ public class Question {
 
 	@Column(name = "answers")
 	@Convert(converter = StringListConverter.class)
-	private StringList answers;
+	private List<String> answers;
 
 }

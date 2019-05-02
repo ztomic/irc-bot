@@ -46,6 +46,7 @@ public class QuizChannelHandler implements Runnable {
 		ZERO_RATED_REGEX = "[" + Pattern.quote(ZERO_RATED_REGEX.trim()) + "]";
 	}
 
+	private final QuizSettings quizSettings;
 	private final QuestionRepository questionRepository;
 	private final PlayerRepository playerRepository;
 	private final UserRepository userRepository;
@@ -82,7 +83,8 @@ public class QuizChannelHandler implements Runnable {
 	
 	private Thread thread;
 
-	public QuizChannelHandler(QuestionRepository questionRepository, PlayerRepository playerRepository, UserRepository userRepository, MessagesConfiguration messagesConfiguration, PircBotX bot, QuizListener quizHandler, String channel, String language) {
+	public QuizChannelHandler(QuizSettings quizSettings, QuestionRepository questionRepository, PlayerRepository playerRepository, UserRepository userRepository, MessagesConfiguration messagesConfiguration, PircBotX bot, QuizListener quizHandler, String channel, String language) {
+		this.quizSettings = quizSettings;
 		this.questionRepository = questionRepository;
 		this.playerRepository = playerRepository;
 		this.userRepository = userRepository;
@@ -182,7 +184,7 @@ public class QuizChannelHandler implements Runnable {
 				if (Arrays.binarySearch(QuizListener.ZERRO_RATED_CHARS, c) >= 0) {
 					hint.append(c);
 				} else {
-					hint.append(quizListener.HINT_CHAR_CFG);
+					hint.append(quizSettings.getHintChar());
 				}
 			}
 			answerPoints = calculateAnswerPoints();
@@ -195,31 +197,29 @@ public class QuizChannelHandler implements Runnable {
 			}
 			for (int i = 0; i < answer.length(); i++) {
 				char c = answer.charAt(i);
-				if (c == ' ')
-					continue;
 				if (i == 0) {
-					pt += quizListener.FIRST_CHAR_POINTS_CFG;
+					pt += quizSettings.getFirstCharPoints();
 					continue;
 				}
 				if (i == answer.length() - 1) {
-					pt += quizListener.LAST_CHAR_POINTS_CFG;
-					continue;
-				}
-				if (Character.isDigit(c)) {
-					pt += quizListener.NUMBER_POINTS_CFG;
-					continue;
-				}
-				if (Arrays.binarySearch(QuizListener.VOWELS, c) >= 0) {
-					pt += quizListener.VOWEL_POINTS_CFG;
+					pt += quizSettings.getLastCharPoints();
 					continue;
 				}
 				if (Arrays.binarySearch(QuizListener.ZERRO_RATED_CHARS, c) >= 0) {
 					continue;
 				}
-				pt += quizListener.LETTER_POINTS_CFG;
+				if (Character.isDigit(c)) {
+					pt += quizSettings.getNumberPoints();
+					continue;
+				}
+				if (Arrays.binarySearch(QuizListener.VOWELS, c) >= 0) {
+					pt += quizSettings.getVowelPoints();
+					continue;
+				}
+				pt += quizSettings.getLetterPoints();
 			}
-			if (answer.length() > quizListener.BONUS_ON_LENGTH_CFG) {
-				pt += (answer.length() * quizListener.BONUS_ON_LENGTH_FACTOR_CFG);
+			if (answer.length() > quizSettings.getBonusOnLength()) {
+				pt += (answer.length() * quizSettings.getBonusOnLengthFactor());
 			}
 			return pt;
 		}
@@ -235,11 +235,11 @@ public class QuizChannelHandler implements Runnable {
 					char chr = answer.charAt(i);
 					if (Arrays.binarySearch(QuizListener.VOWELS, chr) >= 0 || chr == ' ') {
 						vowels.append(chr);
-						if (hint.charAt(i) == quizListener.HINT_CHAR_CFG) {
+						if (hint.charAt(i) == quizSettings.getHintChar()) {
 							hint.replace(i, i + 1, String.valueOf(chr));
 						}
 					} else {
-						vowels.append(quizListener.HINT_CHAR_CFG);
+						vowels.append(quizSettings.getHintChar());
 					}
 				}
 				sentV = true;
@@ -250,7 +250,7 @@ public class QuizChannelHandler implements Runnable {
 
 		synchronized String getFirstChar() {
 			if (!sentH) {
-				if (hint.charAt(0) == quizListener.HINT_CHAR_CFG) {
+				if (hint.charAt(0) == quizSettings.getHintChar()) {
 					hint.replace(0, 1, String.valueOf(answer.charAt(0)));
 				}
 				sentH = true;
@@ -261,7 +261,7 @@ public class QuizChannelHandler implements Runnable {
 
 		synchronized String getLastChar() {
 			if (!sentZ) {
-				if (hint.charAt(hint.length() - 1) == quizListener.HINT_CHAR_CFG) {
+				if (hint.charAt(hint.length() - 1) == quizSettings.getHintChar()) {
 					hint.replace(hint.length() - 1, hint.length(), String.valueOf(answer.charAt(answer.length() - 1)));
 				}
 				sentZ = true;
@@ -274,7 +274,7 @@ public class QuizChannelHandler implements Runnable {
 			phase = 3;
 			for (int i = 0; i < answer.length(); i++) {
 				if (i % 2 == 0 || answer.charAt(i) == ' ') {
-					if (hint.charAt(i) == quizListener.HINT_CHAR_CFG) {
+					if (hint.charAt(i) == quizSettings.getHintChar()) {
 						hint.replace(i, i + 1, String.valueOf(answer.charAt(i)));
 					}
 				}
@@ -302,13 +302,13 @@ public class QuizChannelHandler implements Runnable {
 				}
 				char c = text.charAt(i);
 				if (answer.toLowerCase().charAt(i) == c) {
-					if (hint.charAt(i) == quizListener.HINT_CHAR_CFG) {
+					if (hint.charAt(i) == quizSettings.getHintChar()) {
 						hint.replace(i, i + 1, String.valueOf(answer.charAt(i)));
 					}
 				}
 
 			}
-			if (quizListener.SHOW_GUESSED_CFG && !oldHint.equals(hint.toString()) && phase >= quizListener.SHOW_GUESSED_PHASE_CFG) {
+			if (quizSettings.isShowGuessed() && !oldHint.equals(hint.toString()) && phase >= quizSettings.getShowGuessedPhase()) {
 				sendMessage(channel, String.format(getFormats().getGuessedFormat(), hint.toString()));
 			}
 		}
@@ -328,7 +328,7 @@ public class QuizChannelHandler implements Runnable {
 
 	private synchronized void reloadQuestions() {
 		this.questions = questionRepository.findByLanguageIgnoreCase(language);
-		log.info("Reloaded questions. Question count: " + questions.size());
+		log.info("Reloaded questions. Question count: {}", questions.size());
 	}
 
 	private boolean patternMatches(String answer, String message) {
@@ -465,8 +465,8 @@ public class QuizChannelHandler implements Runnable {
 					this.maxStreakPlayer = p.getId();
 				}
 			}
-			log.info("Fastest player: " + fastestPlayer);
-			log.info("Max streak player: " + maxStreakPlayer);
+			log.info("Fastest player: {}", fastestPlayer);
+			log.info("Max streak player: {}", maxStreakPlayer);
 			
 			reloadQuestions();
 
@@ -492,22 +492,22 @@ public class QuizChannelHandler implements Runnable {
 					lastHint = new Hint(answer);
 
 					lastQuestion = q;
-					log.info("Selected: " + q);
+					log.info("Selected: {}", q);
 					answered = false;
 					long users = getUsers(channel).size() - 1;
 					double factor = users * 1.1;
 					points = Math.round(lastHint.getAnswerPoints() * factor);
-					int b = random.nextInt(quizListener.BONUS_RANDOM_CFG);
+					int b = random.nextInt(quizSettings.getBonusRandom());
 					boolean bonus = false;
-					if (b == quizListener.BONUS_MATCH_CFG && lastHint.answer.length() < quizListener.BONUS_ON_LENGTH_CFG) {
+					if (b == quizSettings.getBonusMatch() && lastHint.answer.length() < quizSettings.getBonusOnLength()) {
 						bonus = true;
 						points *= quizListener.BONUS_FACTORS[random.nextInt(quizListener.BONUS_FACTORS.length)];
 					}
 					sendMessage(channel, String.format(getFormats().getQuestionFormat(), q.getId(), q.getTheme(), q.getQuestion()));
-					sendMessage(channel, String.format(lastHint.answer.length() > quizListener.BONUS_ON_LENGTH_CFG ? getFormats().getHint1ChallengeFormat() : (bonus ? getFormats().getHint1BonusFormat() : getFormats().getHint1Format()), lastHint.getLevel1Hint(), points, getPointsString(points)));
+					sendMessage(channel, String.format(lastHint.answer.length() > quizSettings.getBonusOnLength() ? getFormats().getHint1ChallengeFormat() : (bonus ? getFormats().getHint1BonusFormat() : getFormats().getHint1Format()), lastHint.getLevel1Hint(), points, getPointsString(points)));
 					tstart = System.currentTimeMillis();
 					synchronized (this) {
-						wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
+						wait(TimeUnit.SECONDS.toMillis(quizSettings.getHintDelaySec()));
 						if (!answered) {
 							if (jump) {
 								jump = false;
@@ -519,7 +519,7 @@ public class QuizChannelHandler implements Runnable {
 							}
 							points = Math.round(points / 2d);
 							sendMessage(channel, String.format(getFormats().getHint2Format(), lastHint.getLevel2Hint(), points, getPointsString(points)));
-							wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
+							wait(TimeUnit.SECONDS.toMillis(quizSettings.getHintDelaySec()));
 							if (!answered) {
 								if (jump) {
 									jump = false;
@@ -531,7 +531,7 @@ public class QuizChannelHandler implements Runnable {
 								}
 								points = Math.round(points / 2d);
 								sendMessage(channel, String.format(getFormats().getHint3Format(), lastHint.getLevel3Hint(), points, getPointsString(points)));
-								wait(TimeUnit.SECONDS.toMillis(quizListener.HINT_DELAY_SEC_CFG));
+								wait(TimeUnit.SECONDS.toMillis(quizSettings.getHintDelaySec()));
 							}
 						}
 						lastQuestion = null;
@@ -542,10 +542,10 @@ public class QuizChannelHandler implements Runnable {
 						}
 					}
 					lastAnswer = answer;
-					Thread.sleep(TimeUnit.SECONDS.toMillis(quizListener.QUESTION_DELAY_SEC_CFG));
+					Thread.sleep(TimeUnit.SECONDS.toMillis(quizSettings.getQuestionDelaySec()));
 				}
 
-				log.info("Question finished.. answered: " + answered);
+				log.info("Question finished.. answered: {}", answered);
 			}
 			sendMessage(channel, "Quiz is stopped.");
 		} catch (Throwable t) {
@@ -664,7 +664,7 @@ public class QuizChannelHandler implements Runnable {
 							}
 							if (hasDuel == null) {
 								duels.add(new Duel(user.getNick(), user2.getNick(), questions));
-								event.getBot().sendIRC().message(nick2, String.format("%s vas je izazva[o|la] na dvoboj do %s. Potvrdite sa %s, odbijte sa %s.", Colors.smartColoredNick(user.getNick()), Colors.paintString(Colors.RED, questions), Colors.paintString(Colors.DARK_GREEN, quizListener.COMMAND_PREFIX_CFG + QuizCommand.MRTAVSI), Colors.paintString(Colors.BLUE, quizListener.COMMAND_PREFIX_CFG + QuizCommand.ODBIJ)));
+								event.getBot().sendIRC().message(nick2, String.format("%s vas je izazva[o|la] na dvoboj do %s. Potvrdite sa %s, odbijte sa %s.", Colors.smartColoredNick(user.getNick()), Colors.paintString(Colors.RED, questions), Colors.paintString(Colors.DARK_GREEN, quizListener.getCommandPrefix() + QuizCommand.MRTAVSI), Colors.paintString(Colors.BLUE, quizListener.getCommandPrefix() + QuizCommand.ODBIJ)));
 							} else {
 								if (!hasDuel.confirmed)
 									event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste izazvali %s na dvoboj!", Colors.smartColoredNick(nick2)));
@@ -755,82 +755,7 @@ public class QuizChannelHandler implements Runnable {
 			reloadQuestions();
 			break;
 		}
-		case FANATICI: {
-			String category = "score";
-			if (args.size() >= 1) {
-				category = args.get(0);
-				if (args.size() == 2) {
-					category = args.get(0) + " " + args.get(1);
-				}
-			} else {
-				event.getBot().sendIRC().message(user.getNick(), "Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
-			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(event.getBot().getServerHostname(), channel);
-
-			if (players.isEmpty()) {
-				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
-				break;
-			}
-
-			if (category.equalsIgnoreCase("score")) {
-				players.sort(Player.CMP_BY_SCORE);
-				players.removeIf(player -> player.getScore() == 0);
-			} else if (category.equalsIgnoreCase("month")) {
-				players.sort(Player.CMP_BY_MONTH_SCORE);
-				players.removeIf(player -> player.getMonthScore() == 0);
-			} else if (category.equalsIgnoreCase("week")) {
-				players.sort(Player.CMP_BY_WEEK_SCORE);
-				players.removeIf(player -> player.getWeekScore() == 0);
-			} else if (category.equalsIgnoreCase("row")) {
-				players.sort(Player.CMP_BY_STREAK_ASC);
-				players.removeIf(player -> player.getRowRecord() == 0);
-			} else if (category.equalsIgnoreCase("speed")) {
-				players.sort(Player.CMP_BY_SPEED_ASC);
-				players.removeIf(player -> player.getFastestTime() == 0);
-			} else if (category.equalsIgnoreCase("duels")) {
-				players.sort(Player.CMP_BY_DUELS);
-				players.removeIf(player -> player.getDuels() == 0);
-			} else if (category.equalsIgnoreCase("duels won")) {
-				players.sort(Player.CMP_BY_DUELS_WON);
-				players.removeIf(player -> player.getDuelsWon() == 0);
-			} else {
-				category = "score";
-				players.sort(Player.CMP_BY_SCORE);
-				players.removeIf(player -> player.getScore() == 0);
-			}
-
-			if (players.isEmpty()) {
-				event.respond(String.format("Nema fanatika (server:%s, kanal:%s) u kategoriji:%s!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
-				break;
-			}
-
-			List<Player> all = new ArrayList<>(players);
-
-			StringBuilder response = new StringBuilder();
-			response.append(String.format("Fanatici (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
-			int i = 1;
-			for (Player player : players) {
-				all.sort(Player.CMP_BY_SCORE);
-				int scorePos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_MONTH_SCORE);
-				int monthPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_WEEK_SCORE);
-				int weekPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_SPEED_ASC);
-				int speedPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_STREAK_ASC);
-				int streekPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_DUELS);
-				int duelsPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_DUELS_WON);
-				int duelsWonPos = all.indexOf(player) + 1;
-				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ")).append(String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
-				if (i == 3) break;
-				i++;
-			}
-			event.respond(response.toString());
-			break;
-		}
+		case TOP3:
 		case TOP10:
 			String category = "score";
 			if (args.size() >= 1) {
@@ -876,14 +801,14 @@ public class QuizChannelHandler implements Runnable {
 			}
 
 			if (players.isEmpty()) {
-				event.respond(String.format("Nema TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+				event.respond(String.format("Nema %s igraca (server:%s, kanal:%s) u kategoriji:%s!", command, Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 				break;
 			}
 
 			List<Player> all = new ArrayList<>(players);
 
 			StringBuilder response = new StringBuilder();
-			response.append(String.format("TOP10 igraca (server:%s, kanal:%s) u kategoriji:%s\n", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+			response.append(String.format("%s igraca (server:%s, kanal:%s) u kategoriji:%s\n", command, Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
 			int i = 1;
 			for (Player player : players) {
 				all.sort(Player.CMP_BY_SCORE);
@@ -901,7 +826,16 @@ public class QuizChannelHandler implements Runnable {
 				all.sort(Player.CMP_BY_DUELS_WON);
 				int duelsWonPos = all.indexOf(player) + 1;
 				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ")).append(String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
-				if (i == 10) break;
+				if (command == QuizCommand.TOP3) {
+					if (i == 3) {
+						break;
+					}
+				}
+				if (command == QuizCommand.TOP10) {
+					if (i == 10) {
+						break;
+					}
+				}
 				i++;
 			}
 			event.respond(response.toString());
@@ -945,7 +879,7 @@ public class QuizChannelHandler implements Runnable {
 	private void cleanDuels() {
 		synchronized (duels) {
 			if (!CollectionUtils.isEmpty(duels)) {
-				duels.removeIf(duel -> (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(QuizListener.DUEL_ACTIVITY_TIMEOUT_CFG)) > duel.lastActivity);
+				duels.removeIf(duel -> (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(quizSettings.getDuelInactivityTimeout())) > duel.lastActivity);
 			}
 		}
 	}
@@ -971,9 +905,9 @@ public class QuizChannelHandler implements Runnable {
 	}
 
 	private void checkInactivity() {
-		if (quizListener.CHANNEL_TIMEOUT_MINUTES_CFG > 0) {
-			if (lastActivity < (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(quizListener.CHANNEL_TIMEOUT_MINUTES_CFG))) {
-				log.debug("Stopping quiz due to inactivity. Last activity on channel was at: " + TimeUtil.format(lastActivity));
+		if (quizSettings.getChannelInactivityTimeout() > 0) {
+			if (lastActivity < (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(quizSettings.getChannelInactivityTimeout()))) {
+				log.debug("Stopping quiz due to inactivity. Last activity on channel was at: {}", TimeUtil.format(lastActivity));
 				sendMessage(channel, "Zaustavljam kviz.. Nitko se ne zeli igrati :(");
 				stopQuiz();
 			}

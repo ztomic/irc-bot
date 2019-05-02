@@ -22,6 +22,7 @@ spring:
     username: quizbot
     password: quizbot
     data: data.sql
+    initialization-mode: never
   datasourceX:
     url: jdbc:mysql://dev-vm/irc_bot?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Europe/Zagreb
     username: root
@@ -41,7 +42,7 @@ spring:
 irc:
   start-ident: false
   servers:
-  - hostname: callidus.sytes.net
+  - hostname: irc.fpz.hr
     port: 6667
     auto-nick-change: true
     encoding: UTF-8
@@ -54,12 +55,13 @@ irc:
     message-limit-interval: 1
     quiz: true
     channels:
-    - name: "#quiz-test"
+    - name: "#quiz"
       language: CROATIAN
       quiz: true
-    - name: "#quiz-en-test"
+    - name: "#quiz-en"
       language: ENGLISH
-      quiz: true
+      quiz: false
+
       
 msg:
   quiz:
@@ -111,3 +113,7 @@ msg:
       - "Hallelujah"
       - "Nevjerojatno"
       - "Fan fan fantastichooo.."
+
+questions:
+  loader:
+    file:

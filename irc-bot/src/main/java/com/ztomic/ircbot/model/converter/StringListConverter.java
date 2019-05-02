@@ -1,22 +1,22 @@
 package com.ztomic.ircbot.model.converter;
 
-import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
 import org.springframework.util.StringUtils;
 
-import com.ztomic.ircbot.model.StringList;
-
 /**
  * Converter for list of strings delimited with new line
  */
 @Converter
-public class StringListConverter implements AttributeConverter<StringList, String>{
+public class StringListConverter implements AttributeConverter<List<String>, String>{
 
 	@Override
-	public String convertToDatabaseColumn(StringList attribute) {
+	public String convertToDatabaseColumn(List<String> attribute) {
 		if (attribute != null) {
 			return String.join("\n", attribute);
 		}
@@ -24,11 +24,13 @@ public class StringListConverter implements AttributeConverter<StringList, Strin
 	}
 
 	@Override
-	public StringList convertToEntityAttribute(String dbData) {
-		StringList sl = new StringList();
+	public List<String> convertToEntityAttribute(String dbData) {
+		List<String> sl = new LinkedList<>();
 		if (dbData != null) {
-			sl.addAll(Arrays.asList(dbData.split("\n")));
-			sl.removeIf(StringUtils::isEmpty);
+			Pattern.compile("\n")
+					.splitAsStream(dbData)
+					.filter(StringUtils::hasText)
+					.forEach(sl::add);
 		}
 		return sl;
 	}

@@ -55,7 +55,7 @@ public class IrcListenerAdapter extends ListenerAdapter {
 					user = userRepository.saveAndFlush(user);
 				}
 			} catch (Throwable t) {
-				log.error("Error adding new user: " + event, t);
+				log.error("Error adding new user: {}", event, t);
 			}
 			return user;
 		} finally {
