@@ -2,10 +2,10 @@ package com.ztomic.ircbot.component;
 
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.EntityManagerFactory;
 
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,12 +18,7 @@ public class ExecutorFactory {
 	}
 
 	public PersistenceThreadPoolExecutor createPersistenceThreadPoolExecutor(String namePrefix, int poolSize) {
-		final AtomicInteger handlerCount = new AtomicInteger();
-		PersistenceThreadPoolExecutor executor = new PersistenceThreadPoolExecutor(0, poolSize, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
-			Thread t = new Thread(r);
-			t.setName(namePrefix + "-" + handlerCount.incrementAndGet());
-			return t;
-		});
+		PersistenceThreadPoolExecutor executor = new PersistenceThreadPoolExecutor(0, poolSize, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(), new CustomizableThreadFactory(namePrefix + "-"));
 		executor.setEntityManagerFactory(entityManagerFactory);
 		return executor;
 	}

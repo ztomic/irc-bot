@@ -3,7 +3,8 @@ logging:
   history:
     max: 30 # http://logback.qos.ch/manual/appenders.html#tbrpMaxHistory
     clean-on-start: true # http://logback.qos.ch/manual/appenders.html#tbrpCleanHistoryOnStart
-  file: logs/${pom.artifactId} # Log file name, if not configured application will log to system out
+  file:
+    name: logs/${pom.artifactId} # Log file name, if not configured application will log to system out
     
 # Database configuration
 spring:

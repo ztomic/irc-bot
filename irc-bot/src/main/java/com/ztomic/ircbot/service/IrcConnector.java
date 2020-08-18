@@ -13,13 +13,13 @@ import org.pircbotx.Configuration.Builder;
 import org.pircbotx.IdentServer;
 import org.pircbotx.MultiBotManager;
 import org.pircbotx.PircBotX;
+import org.pircbotx.delay.StaticDelay;
 import org.pircbotx.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -60,7 +60,7 @@ public class IrcConnector {
 					.addServer(server.getHostname(), server.getPort())
 					.setMaxLineLength(server.getMaxLineLength())
 					.setAutoSplitMessage(true)
-					.setMessageDelay(0)
+					.setMessageDelay(new StaticDelay(0))
 					.setEncoding(Charset.forName(server.getEncoding()))
 					.setAutoReconnect(true);
 			if (StringUtils.hasText(server.getNickServPassword())) {

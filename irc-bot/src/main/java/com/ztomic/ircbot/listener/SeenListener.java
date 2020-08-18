@@ -52,7 +52,7 @@ public class SeenListener extends CommandListener {
 	
 	@Override
 	public Set<? extends Command> getCommands() {
-		return Collections.singleton(createCommand("SEEN", Level.REGISTERED));
+		return Collections.singleton(Command.create("SEEN", Level.REGISTERED));
 	}
 	
 	@Override

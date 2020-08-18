@@ -30,7 +30,7 @@ public class HelpListener extends CommandListener {
 	
 	@Override
 	public Set<? extends Command> getCommands() {
-		return Collections.singleton(createCommand("HELP", Level.NEWBIE));
+		return Collections.singleton(Command.create("HELP", Level.NEWBIE));
 	}
 
 	@Override

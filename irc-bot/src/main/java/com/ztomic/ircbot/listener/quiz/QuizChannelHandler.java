@@ -328,7 +328,7 @@ public class QuizChannelHandler implements Runnable {
 
 	private synchronized void reloadQuestions() {
 		this.questions = questionRepository.findByLanguageIgnoreCase(language);
-		log.info("Reloaded questions. Question count: {}", questions.size());
+		log.info("Reloaded {} questions.", questions.size());
 	}
 
 	private boolean patternMatches(String answer, String message) {
@@ -545,7 +545,7 @@ public class QuizChannelHandler implements Runnable {
 					Thread.sleep(TimeUnit.SECONDS.toMillis(quizSettings.getQuestionDelaySec()));
 				}
 
-				log.info("Question finished.. answered: {}", answered);
+				log.info("Question finished with{} answer.", answered ? "" : "out");
 			}
 			sendMessage(channel, "Quiz is stopped.");
 		} catch (Throwable t) {

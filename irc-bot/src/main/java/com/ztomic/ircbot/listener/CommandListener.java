@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import com.ztomic.ircbot.configuration.IrcConfiguration;
 import com.ztomic.ircbot.configuration.MessagesConfiguration;
 import com.ztomic.ircbot.model.User;
-import com.ztomic.ircbot.model.User.Level;
 import com.ztomic.ircbot.repository.UserRepository;
 import com.ztomic.ircbot.util.Colors;
 import org.pircbotx.hooks.types.GenericMessageEvent;
@@ -30,7 +29,7 @@ public abstract class CommandListener extends IrcListenerAdapter {
 			if (command != null) {
 				String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
 				log.debug("User [{}] is calling command [{}] with arguments {}", user, command, Arrays.toString(args));
-				if (!isAllowed(command, user)) {
+				if (!command.isAllowed(user)) {
 					event.respond(Colors.paintString(Colors.RED, "You're not allowed to execute command: " + command + ", required level is: " + command.getLevel() + ", you have: " + user.getLevel()));
 					return;
 				}
@@ -50,7 +49,7 @@ public abstract class CommandListener extends IrcListenerAdapter {
 	}
 	
 	public Set<? extends Command> getCommands(User user) {
-		return getCommands().stream().filter(c -> isAllowed(c, user)).collect(Collectors.toCollection(LinkedHashSet::new));
+		return getCommands().stream().filter(c -> c.isAllowed(user)).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 	
 	public String getCommandPrefix() {
@@ -84,30 +83,6 @@ public abstract class CommandListener extends IrcListenerAdapter {
 			}
 		}
 		return null;
-	}
-	
-	public boolean isAllowed(Command command, User user) {
-		return user.getLevel().ordinal() >= command.getLevel().ordinal();
-	}
-	
-	public Command createCommand(final String name, final Level level) {
-		return new Command() {
-			
-			@Override
-			public String getName() {
-				return name;
-			}
-			
-			@Override
-			public Level getLevel() {
-				return level;
-			}
-			
-			@Override
-			public String toString() {
-				return name;
-			}
-		};
 	}
 
 	public abstract void handleCommand(GenericMessageEvent event, Command command, User user, String[] arguments);
