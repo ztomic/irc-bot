@@ -194,7 +194,7 @@ public class QuizListener extends CommandListener {
 	public void onJoin(JoinEvent cj) {
 		if (!cj.getUser().getNick().equals(cj.getBot().getUserBot().getNick())) {
 			if (quizSettings.isSendGreet()) {
-				List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(cj.getBot().getServerHostname(), cj.getChannel().getName());
+				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(cj.getBot().getServerHostname(), cj.getChannel().getName());
 				Player player = players
 						.stream()
 						.filter(p -> p.getNick().equalsIgnoreCase(cj.getUser().getNick()))

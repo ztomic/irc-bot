@@ -52,7 +52,7 @@ public class SeenListener extends CommandListener {
 	
 	@Override
 	public Set<? extends Command> getCommands() {
-		return Collections.singleton(Command.create("SEEN", Level.REGISTERED));
+		return Collections.singleton(Command.create("SEEN", Level.NEWBIE));
 	}
 	
 	@Override
@@ -60,8 +60,7 @@ public class SeenListener extends CommandListener {
 		super.onEvent(ev);
 		PircBotX bot = ev.getBot();
 		String server = bot.getServerHostname();
-		if (ev instanceof KickEvent) { 
-			KickEvent ck = (KickEvent) ev;
+		if (ev instanceof KickEvent ck) {
 			org.pircbotx.User user = ck.getRecipient();
 			Seen s = findSeen(user.getNick(), server);
 			if (s == null) {
@@ -85,8 +84,7 @@ public class SeenListener extends CommandListener {
 			s.addDetail("kicked.reason", ck.getReason());
 			s.setTime(TimeUtil.getLocalDateTime(ck.getTimestamp()));
 			s = seenRepository.save(s);
-		} else if (ev instanceof PartEvent) {
-			PartEvent cp = (PartEvent) ev;
+		} else if (ev instanceof PartEvent cp) {
 			org.pircbotx.User user = cp.getUser();
 			Seen s = findSeen(user.getNick(), server);
 			if (s == null) {
@@ -105,8 +103,7 @@ public class SeenListener extends CommandListener {
 			s = seenRepository.save(s);
 		} else if (ev instanceof JoinEvent) {
 			
-		} else if (ev instanceof QuitEvent) {
-			QuitEvent qe = (QuitEvent) ev;
+		} else if (ev instanceof QuitEvent qe) {
 			org.pircbotx.User user = qe.getUser();
 			Seen s = findSeen(user.getNick(), server);
 			if (s == null) {
@@ -127,8 +124,7 @@ public class SeenListener extends CommandListener {
 			s.addDetail("quit.channels", StringUtils.collectionToCommaDelimitedString(channels));
 			s.addDetail("quit.message", qe.getReason());
 			s = seenRepository.save(s);
-		} else if (ev instanceof NickChangeEvent) {
-			NickChangeEvent nc = (NickChangeEvent) ev;
+		} else if (ev instanceof NickChangeEvent nc) {
 			org.pircbotx.User user = nc.getUser();
 			Seen s = findSeen(nc.getOldNick(), server);
 			if (s == null) {
@@ -209,17 +205,17 @@ public class SeenListener extends CommandListener {
 		}
 		Formats formats = getQuizMessages().getFormats();
 		if (entity.getType() == EventType.Part) {
-			return String.format(formats.getSeenPartFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getChannel(), entity.getDetail("part.message"));
+			return String.format(formats.getSeenPartFormat(), Colors.smartColoredNick(entity.getNick()), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getChannel(), entity.getDetail("part.message"));
 		}
 		if (entity.getType() == EventType.Nick) {
-			return String.format(formats.getSeenNickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getDetail("new.nick"));
+			return String.format(formats.getSeenNickFormat(), Colors.smartColoredNick(entity.getNick()), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getDetail("new.nick"));
 		}
 		if (entity.getType() == EventType.Kick) {
 			String kicker = entity.getDetail("kicked.from.nick") + "!" + entity.getDetail("kicked.from.ident") + "@" + entity.getDetail("kicked.from.host");
-			return String.format(formats.getSeenKickFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getChannel(), kicker, entity.getDetail("kicked.reason"));
+			return String.format(formats.getSeenKickFormat(), Colors.smartColoredNick(entity.getNick()), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getChannel(), kicker, entity.getDetail("kicked.reason"));
 		}
 		if (entity.getType() == EventType.Quit) {
-			return String.format(formats.getSeenQuitFormat(), entity.getNick(), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getDetail("quit.message"));
+			return String.format(formats.getSeenQuitFormat(), Colors.smartColoredNick(entity.getNick()), entity.getIdent(), entity.getHost(), entity.getName(), TimeUtil.format(entity.getTime()), entity.getDetail("quit.message"));
 		}
 
 		return null;

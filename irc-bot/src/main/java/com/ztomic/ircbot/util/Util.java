@@ -27,7 +27,7 @@ public final class Util {
 	}
 
 	public static boolean parseBool(String s) {
-		return s != null && (s.toUpperCase().startsWith("Y") || s.toUpperCase().equals("TRUE"));
+		return s != null && (s.toUpperCase().startsWith("Y") || s.equalsIgnoreCase("TRUE"));
 	}
 
 	public static List<String> parseList(String s, String separator) {

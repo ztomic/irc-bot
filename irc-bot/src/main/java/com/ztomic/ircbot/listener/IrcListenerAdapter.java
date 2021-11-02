@@ -20,7 +20,7 @@ public class IrcListenerAdapter extends ListenerAdapter {
 	
 	protected static final String COMMAND_PREFIX = "-";
 	
-	private static Semaphore SEMAPHORE = new Semaphore(1);
+	private static final Semaphore SEMAPHORE = new Semaphore(1);
 
 	protected final IrcConfiguration ircConfiguration;
 	protected final MessagesConfiguration messagesConfiguration;

@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
 
 public class PersistenceThreadPoolExecutor extends ThreadPoolExecutor {
 
-	private static Logger log = LoggerFactory.getLogger(PersistenceThreadPoolExecutor.class);
+	private static final Logger log = LoggerFactory.getLogger(PersistenceThreadPoolExecutor.class);
 
-	private ThreadLocal<Boolean> participate = ThreadLocal.withInitial(() -> false);
+	private final ThreadLocal<Boolean> participate = ThreadLocal.withInitial(() -> false);
 
 	private EntityManagerFactory entityManagerFactory;
 

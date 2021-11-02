@@ -21,8 +21,8 @@ public class CustomOutputRaw extends OutputRaw {
 	private static final Logger log = LoggerFactory.getLogger(CustomOutputRaw.class);
 	
 	public List<Long> timestamps = new ArrayList<>();
-	private double messageLimit;
-	private double messageLimitInterval;
+	private final double messageLimit;
+	private final double messageLimitInterval;
 	
 	public CustomOutputRaw(PircBotX bot, double messageLimit, double messageLimitInterval) {
 		super(bot);
@@ -113,14 +113,14 @@ public class CustomOutputRaw extends OutputRaw {
 		if (parts.size() > 1) {
 			List<String> lines = new LinkedList<>();
 			while (!parts.isEmpty()) {
-				String line = "";
+				StringBuilder line = new StringBuilder();
 				while (line.length() < charLimit && !parts.isEmpty()) {
 					if (line.length() + parts.get(0).length() > charLimit) {
 						break;
 					}
-					line += parts.remove(0);
+					line.append(parts.remove(0));
 				}
-				lines.add(line);
+				lines.add(line.toString());
 			}
 			if (!lines.isEmpty()) {
 				List<String> output = new LinkedList<>();

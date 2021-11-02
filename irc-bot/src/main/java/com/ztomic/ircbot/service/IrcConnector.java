@@ -2,6 +2,7 @@ package com.ztomic.ircbot.service;
 
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Optional;
 
 import com.ztomic.ircbot.component.ExecutorFactory;
 import com.ztomic.ircbot.component.pircbotx.CustomBotFactory;
@@ -32,10 +33,10 @@ public class IrcConnector {
 
 	private final IrcConfiguration ircConfig;
 	private final ExecutorFactory executorFactory;
-	private final BuildProperties buildProperties;
+	private final Optional<BuildProperties> buildProperties;
 	private final List<ListenerAdapter> listeners;
 
-	public IrcConnector(IrcConfiguration ircConfig, ExecutorFactory executorFactory, BuildProperties buildProperties, List<ListenerAdapter> listeners) {
+	public IrcConnector(IrcConfiguration ircConfig, ExecutorFactory executorFactory, Optional<BuildProperties> buildProperties, List<ListenerAdapter> listeners) {
 		this.ircConfig = ircConfig;
 		this.executorFactory = executorFactory;
 		this.buildProperties = buildProperties;
@@ -55,7 +56,7 @@ public class IrcConnector {
 					.setName(server.getName())
 					.setLogin(server.getLogin())
 					.setRealName(server.getRealName())
-					.setVersion(buildProperties.getVersion())
+					.setVersion(buildProperties.map(BuildProperties::getVersion).orElse("1.0.0"))
 					.setAutoNickChange(server.isAutoNickChange())
 					.addServer(server.getHostname(), server.getPort())
 					.setMaxLineLength(server.getMaxLineLength())

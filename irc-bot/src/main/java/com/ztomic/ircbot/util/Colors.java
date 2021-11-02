@@ -306,8 +306,8 @@ public class Colors {
 	 * Returns KVIrc-style colored nickname (nickname must be between <> in
 	 * file, e.g. <nickname>)
 	 * 
-	 * @param nick
-	 * @return
+	 * @param nick IRC nickname
+	 * @return colored IRC nickname
 	 */
 	public static String smartColoredNick(String nick) {
 		String _nick = nick;
@@ -356,8 +356,8 @@ public class Colors {
 	public enum ColorTags {
 		C("{C}", COLOR), B("{B}", BOLD), U("{U}", UNDERLINE), O("{O}", RESET), R("{R}", REVERSE), NL("{NL}", '\n');
 		
-		public String regex;
-		public char replacement;
+		public final String regex;
+		public final char replacement;
 		
 		ColorTags(String regex, char replacement) {
 			this.regex = regex;

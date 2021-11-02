@@ -31,6 +31,9 @@ spring:
     platform: mysql
   main:
     banner-mode: log
+  jackson:
+    serialization:
+      indent-output: true
   jpa:
     hibernate:
       ddl-auto: update

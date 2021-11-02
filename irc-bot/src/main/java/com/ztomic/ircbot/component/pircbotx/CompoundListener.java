@@ -12,7 +12,7 @@ import org.pircbotx.hooks.Listener;
 
 public class CompoundListener implements Listener {
 	
-	private List<Listener> listeners = new ArrayList<>();
+	private final List<Listener> listeners = new ArrayList<>();
 	
 	public CompoundListener(Set<Listener> listeners) {
 		this.listeners.addAll(listeners);

@@ -4,11 +4,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.3.3.RELEASE</version>
+		<version>2.5.6</version>
 	</parent>
 	<groupId>com.ztomic.ircbot</groupId>
 	<artifactId>irc-bot</artifactId>
-	<version>2.0.1-SNAPSHOT</version>
+	<version>2.0.2-SNAPSHOT</version>
 	<name>irc-bot</name>
 	<url>https://github.com/ztomic/irc-bot</url>
 
@@ -32,7 +32,7 @@
 	</scm>
 
 	<properties>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 		<resource.delimiter>$</resource.delimiter>
 
 		<pircbotx.version>2.2</pircbotx.version>

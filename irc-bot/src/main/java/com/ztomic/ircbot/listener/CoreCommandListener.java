@@ -41,7 +41,7 @@ public class CoreCommandListener extends CommandListener {
 		LUSERS(Level.MASTER),
 		TEST(Level.MASTER);
 
-		public Level level;
+		public final Level level;
 
 		CoreCommand(Level level) {
 			this.level = level;

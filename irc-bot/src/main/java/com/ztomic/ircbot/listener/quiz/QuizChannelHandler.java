@@ -54,14 +54,14 @@ public class QuizChannelHandler implements Runnable {
 	
 	private QuizMessages quizMessages;
 
-	private PircBotX bot;
-	private QuizListener quizListener;
-	private String channel;
-	private String language;
+	private final PircBotX bot;
+	private final QuizListener quizListener;
+	private final String channel;
+	private final String language;
 	
-	private Question lastQuestion;
+	private Question currentQuestion;
 	private long lastActivity = System.currentTimeMillis();
-	private String lastAnswer;
+	private String previousQuestionAnswer;
 	private Hint lastHint;
 	private long lastPlayer;
 	private int streak = 1;
@@ -72,7 +72,7 @@ public class QuizChannelHandler implements Runnable {
 	
 	private List<Question> questions;
 	private int nextId = 0;
-	private static Random random = new Random();
+	private static final Random random = new Random();
 	private boolean jump;
 	
 	private long channelFastestTime = 0;
@@ -159,8 +159,8 @@ public class QuizChannelHandler implements Runnable {
 	}
 
 	public synchronized void repeatLastQuestion() {
-		if (lastQuestion != null && !answered) {
-			sendMessage(channel, String.format(getFormats().getQuestionFormat(), lastQuestion.getId(), lastQuestion.getTheme(), lastQuestion.getQuestion()));
+		if (currentQuestion != null && !answered) {
+			sendMessage(channel, String.format(getFormats().getQuestionFormat(), currentQuestion.getId(), currentQuestion.getTheme(), currentQuestion.getQuestion()));
 		}
 	}
 
@@ -175,7 +175,7 @@ public class QuizChannelHandler implements Runnable {
 
 		private int phase = 1;
 
-		private StringBuilder hint;
+		private final StringBuilder hint;
 
 		Hint(String answer) {
 			this.answer = answer;
@@ -352,7 +352,7 @@ public class QuizChannelHandler implements Runnable {
 		lastActivity = System.currentTimeMillis();
 		String message = msg.getMessage();
 		long time = (System.currentTimeMillis() - tstart);
-		if (lastQuestion != null && !answered) {
+		if (currentQuestion != null && !answered) {
 			Player player = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(msg.getBot().getServerHostname(), channel, msg.getUser().getNick());
 
 			if (player == null) {
@@ -365,7 +365,7 @@ public class QuizChannelHandler implements Runnable {
 			}
 
 			try {
-				for (String answer : lastQuestion.getAnswers()) {
+				for (String answer : currentQuestion.getAnswers()) {
 					User user = userRepository.findByServerAndNickIgnoreCase(player.getServer(), player.getNick());
 					if (isAnswer(answer, message) || (user != null && user.getLevel() == User.Level.MASTER && patternMatches(answer, message))) {
 						answered = true;
@@ -388,7 +388,7 @@ public class QuizChannelHandler implements Runnable {
 								Colors.paintString(Colors.BLUE, comment + ",") + Colors.smartColoredNick(player.getNick()) + Colors.paintString(Colors.BLUE, "! Odgovor je ->") + Colors.paintBoldString(Colors.DARK_BLUE, Colors.YELLOW, " " + answer + " ") + Colors.paintString(Colors.BLUE, "<-. Vrijeme:") + Colors.paintString(Colors.DARK_GREEN, (time / 1000F)) + Colors.paintString(Colors.BLUE, "sec") + (record ? " (" + Colors.paintString(Colors.WHITE, Colors.RED, "OSOBNI REKORD!") + ")." : ".") + (hasStreak ? Colors.paintString(Colors.BLUE, "Niz:") + Colors.paintString(Colors.DARK_GREEN, streak) + Colors.paintString(Colors.BLUE, ".") : "") + Colors.paintString(Colors.BLUE, "Dobivate") + Colors.paintString(Colors.DARK_GREEN, points)
 								+ Colors.paintString(Colors.BLUE, getPointsString(points) + ".") + Colors.paintString(Colors.BLUE, "Novi score:") + Colors.paintString(Colors.DARK_GREEN, player.getScore()));
 						if (channelFastestTime == 0 || channelFastestTime > time) {
-							Player fastestPlayer = getFastestPlayer() > 0 ? playerRepository.getOne(getFastestPlayer()) : null;
+							Player fastestPlayer = getFastestPlayer() > 0 ? playerRepository.findById(getFastestPlayer()).orElse(null) : null;
 							sendMessage(channel, Colors.smartColoredNick(player.getNick()) + " je obori[o|la] brzinski rekord kanala" + (fastestPlayer != null ? " koji je do sada drza[o|la] " + Colors.smartColoredNick(fastestPlayer.getNick()) + " sa " + Colors.paintString(Colors.DARK_GREEN, fastestPlayer.getFastestTime() / 1000F) + "sec" : "."));
 							channelFastestTime = time;
 							setFastestPlayer(player.getId());
@@ -397,7 +397,7 @@ public class QuizChannelHandler implements Runnable {
 							player.setRowRecord(streak);
 							//sendMessage(player.nick, String.format(PERSONAL_STREAK_RECORD_COMMENT_FORMAT, player.rowRecord));
 						}
-						if ((getMaxStreakPlayer() <= 0 || streak > playerRepository.getOne(getMaxStreakPlayer()).getRowRecord()) && hasStreak) {
+						if ((getMaxStreakPlayer() <= 0 || streak > playerRepository.findById(getMaxStreakPlayer()).map(Player::getRowRecord).orElse(0)) && hasStreak) {
 							setMaxStreakPlayer(player.getId());
 							sendMessage(channel, String.format(getFormats().getChannelStreakRecordCommentFormat(), player.getNick(), player.getRowRecord()));
 						}
@@ -419,9 +419,9 @@ public class QuizChannelHandler implements Runnable {
 									synchronized (duels) {
 										duels.remove(d);
 									}
-									sendMessage(channel, String.format("Dvoboj izmedju %s i %s je zavrsen (%s:%s), Cestitamo %s!", Colors.smartColoredNick(d.nick1.nick), Colors.smartColoredNick(d.nick2.nick), Colors.paintString(Colors.DARK_GREEN, d.nick1.score), Colors.paintString(Colors.DARK_GREEN, d.nick2.score), Colors.smartColoredNick(player.getNick())));
+									sendMessage(channel, String.format("Dvoboj izmedju %s i %s je zavrsen (%s:%s), Cestitamo %s!", Colors.smartColoredNick(d.firstPlayer.nick), Colors.smartColoredNick(d.secondPlayer.nick), Colors.paintString(Colors.DARK_GREEN, d.firstPlayer.score), Colors.paintString(Colors.DARK_GREEN, d.secondPlayer.score), Colors.smartColoredNick(player.getNick())));
 								} else {
-									sendMessage(channel, String.format("Dvoboj %s - %s, trenutni rezultat -> %s:%s", Colors.smartColoredNick(d.nick1.nick), Colors.smartColoredNick(d.nick2.nick), Colors.paintString(Colors.DARK_GREEN, d.nick1.score), Colors.paintString(Colors.DARK_GREEN, d.nick2.score)));
+									sendMessage(channel, String.format("Dvoboj %s - %s, trenutni rezultat -> %s:%s", Colors.smartColoredNick(d.firstPlayer.nick), Colors.smartColoredNick(d.secondPlayer.nick), Colors.paintString(Colors.DARK_GREEN, d.firstPlayer.score), Colors.paintString(Colors.DARK_GREEN, d.secondPlayer.score)));
 								}
 							}
 						}
@@ -450,7 +450,7 @@ public class QuizChannelHandler implements Runnable {
 			MDC.put("quiz.channel", channel);
 			thread = Thread.currentThread();
 			
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(bot.getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
 
 			if (players.size() >= 1) {
 				players.sort(Player.CMP_BY_SPEED_ASC);
@@ -491,7 +491,7 @@ public class QuizChannelHandler implements Runnable {
 					answer = answer.trim();
 					lastHint = new Hint(answer);
 
-					lastQuestion = q;
+					currentQuestion = q;
 					log.info("Selected: {}", q);
 					answered = false;
 					long users = getUsers(channel).size() - 1;
@@ -513,7 +513,7 @@ public class QuizChannelHandler implements Runnable {
 								jump = false;
 								lastPlayer = 0;
 								streak = 1;
-								lastAnswer = answer;
+								previousQuestionAnswer = answer;
 								log.debug("Question skipped..");
 								continue;
 							}
@@ -525,7 +525,7 @@ public class QuizChannelHandler implements Runnable {
 									jump = false;
 									lastPlayer = 0;
 									streak = 1;
-									lastAnswer = answer;
+									previousQuestionAnswer = answer;
 									log.debug("Question skipped..");
 									continue;
 								}
@@ -534,14 +534,14 @@ public class QuizChannelHandler implements Runnable {
 								wait(TimeUnit.SECONDS.toMillis(quizSettings.getHintDelaySec()));
 							}
 						}
-						lastQuestion = null;
+						currentQuestion = null;
 						if (!answered) {
 							sendMessage(channel, getFormats().getTimeupMessageFormat());// Odgovor
 							lastPlayer = 0;
 							streak = 1;
 						}
 					}
-					lastAnswer = answer;
+					previousQuestionAnswer = answer;
 					Thread.sleep(TimeUnit.SECONDS.toMillis(quizSettings.getQuestionDelaySec()));
 				}
 
@@ -563,30 +563,30 @@ public class QuizChannelHandler implements Runnable {
 		List<String> args = Arrays.asList(arguments);
 		switch (command) {
 		case H:
-			if (!answered && lastQuestion != null) {
+			if (!answered && currentQuestion != null) {
 				sendH();
 			}
 			break;
 		case V:
-			if (!answered && lastQuestion != null) {
+			if (!answered && currentQuestion != null) {
 				sendV();
 			}
 			break;
 		case Z:
-			if (!answered && lastQuestion != null) {
+			if (!answered && currentQuestion != null) {
 				sendZ();
 			}
 			break;
 		case PONOVI: {
-			if (!answered && lastQuestion != null) {
+			if (!answered && currentQuestion != null) {
 				repeatLastQuestion();
 			}
 			break;
 		}
 		case ODG:
 		case ODGOVOR:
-			if (lastAnswer != null) {
-				event.respond(String.format(getFormats().getLastAnswerFormat(), lastAnswer));
+			if (previousQuestionAnswer != null) {
+				event.respond(String.format(getFormats().getLastAnswerFormat(), previousQuestionAnswer));
 			}
 			break;
 		case SCORE:
@@ -595,7 +595,7 @@ public class QuizChannelHandler implements Runnable {
 			if (args.size() >= 1) {
 				nick = args.get(0);
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(event.getBot().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
 			Player player = null;
 			for (Player p : players) {
 				if (p.getNick().equalsIgnoreCase(nick)) {
@@ -640,8 +640,7 @@ public class QuizChannelHandler implements Runnable {
 			}
 			break;
 		case DATEVIDIM: {
-			if (event instanceof MessageEvent) {
-				MessageEvent e = (MessageEvent) event;
+			if (event instanceof MessageEvent e) {
 				if (args.size() >= 1) {
 					String nick2 = args.get(0);
 					int questions = (args.size() == 2 ? Util.parseInt(args.get(1), 10) : 10);
@@ -657,7 +656,7 @@ public class QuizChannelHandler implements Runnable {
 						synchronized (duels) {
 							Duel hasDuel = null;
 							for (Duel d : duels) {
-								if ((d.nick1.nick.equalsIgnoreCase(user.getNick()) && d.nick2.nick.equalsIgnoreCase(nick2)) || (d.nick2.nick.equalsIgnoreCase(user.getNick()) && d.nick1.nick.equalsIgnoreCase(nick2))) {
+								if ((d.firstPlayer.nick.equalsIgnoreCase(user.getNick()) && d.secondPlayer.nick.equalsIgnoreCase(nick2)) || (d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && d.firstPlayer.nick.equalsIgnoreCase(nick2))) {
 									hasDuel = d;
 									break;
 								}
@@ -666,10 +665,11 @@ public class QuizChannelHandler implements Runnable {
 								duels.add(new Duel(user.getNick(), user2.getNick(), questions));
 								event.getBot().sendIRC().message(nick2, String.format("%s vas je izazva[o|la] na dvoboj do %s. Potvrdite sa %s, odbijte sa %s.", Colors.smartColoredNick(user.getNick()), Colors.paintString(Colors.RED, questions), Colors.paintString(Colors.DARK_GREEN, quizListener.getCommandPrefix() + QuizCommand.MRTAVSI), Colors.paintString(Colors.BLUE, quizListener.getCommandPrefix() + QuizCommand.ODBIJ)));
 							} else {
-								if (!hasDuel.confirmed)
+								if (!hasDuel.confirmed) {
 									event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste izazvali %s na dvoboj!", Colors.smartColoredNick(nick2)));
-								else
+								} else {
 									event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste u dvoboju s %s!", Colors.smartColoredNick(nick2)));
+								}
 							}
 						}
 					}
@@ -687,7 +687,7 @@ public class QuizChannelHandler implements Runnable {
 			synchronized (duels) {
 				Duel found = null;
 				for (Duel d : duels) {
-					if (!d.confirmed && d.nick2.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.nick1.nick.equalsIgnoreCase(challenger))) {
+					if (!d.confirmed && d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.firstPlayer.nick.equalsIgnoreCase(challenger))) {
 						found = d;
 						break;
 					}
@@ -698,17 +698,17 @@ public class QuizChannelHandler implements Runnable {
 				} else {
 					found.confirm();
 
-					Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.nick1.nick);
+					Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.firstPlayer.nick);
 					if (p1 != null) {
 						p1.incrementDuels();
 						p1 = playerRepository.save(p1);
 					}
-					Player p2 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.nick2.nick);
+					Player p2 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.secondPlayer.nick);
 					if (p2 != null) {
 						p2.incrementDuels();
 						p2 = playerRepository.save(p2);
 					}
-					event.getBot().sendIRC().message(channel, String.format("Od iduceg pitanja krece dvoboj do %s izmedju %s i %s!", Colors.paintString(Colors.RED, found.questions), Colors.smartColoredNick(found.nick1.nick), Colors.smartColoredNick(found.nick2.nick)));
+					event.getBot().sendIRC().message(channel, String.format("Od iduceg pitanja krece dvoboj do %s izmedju %s i %s!", Colors.paintString(Colors.RED, found.questions), Colors.smartColoredNick(found.firstPlayer.nick), Colors.smartColoredNick(found.secondPlayer.nick)));
 				}
 			}
 
@@ -723,7 +723,7 @@ public class QuizChannelHandler implements Runnable {
 				}
 				Duel found = null;
 				for (Duel d : duels) {
-					if (!d.confirmed && d.nick2.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.nick1.nick.equalsIgnoreCase(challenger))) {
+					if (!d.confirmed && d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.firstPlayer.nick.equalsIgnoreCase(challenger))) {
 						found = d;
 						break;
 					}
@@ -732,7 +732,7 @@ public class QuizChannelHandler implements Runnable {
 					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
 					else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
 				} else {
-					event.getBot().sendIRC().message(found.nick1.nick, Colors.smartColoredNick(found.nick2.nick)+ " je odbi[o|la] poziv na dvoboj.");
+					event.getBot().sendIRC().message(found.firstPlayer.nick, Colors.smartColoredNick(found.secondPlayer.nick)+ " je odbi[o|la] poziv na dvoboj.");
 					duels.remove(found);
 				}
 			}
@@ -766,7 +766,7 @@ public class QuizChannelHandler implements Runnable {
 			} else {
 				event.respond("Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
 			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(event.getBot().getServerHostname(), channel);
+			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
 
 			if (players.isEmpty()) {
 				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
@@ -843,13 +843,10 @@ public class QuizChannelHandler implements Runnable {
 		}
 	}
 
-	public Duel findDuel(String nick) {
+	public Duel findDuel(String nick1, String nick2) {
 		synchronized (duels) {
 			for (Duel d : duels) {
-				if (d.nick1.nick.equalsIgnoreCase(nick)) {
-					return d;
-				}
-				if (d.nick2.nick.equalsIgnoreCase(nick)) {
+				if ((d.firstPlayer.nick.equalsIgnoreCase(nick1) && d.secondPlayer.nick.equalsIgnoreCase(nick2)) || (d.secondPlayer.nick.equalsIgnoreCase(nick1) && d.firstPlayer.nick.equalsIgnoreCase(nick2))) {
 					return d;
 				}
 			}
@@ -861,9 +858,9 @@ public class QuizChannelHandler implements Runnable {
 		synchronized (duels) {
 			List<Duel> _duels = new ArrayList<>();
 			for (Duel d : duels) {
-				if (d.nick1.nick.equalsIgnoreCase(nick)) {
+				if (d.firstPlayer.nick.equalsIgnoreCase(nick)) {
 					_duels.add(d);
-				} else if (d.nick2.nick.equalsIgnoreCase(nick)) {
+				} else if (d.secondPlayer.nick.equalsIgnoreCase(nick)) {
 					_duels.add(d);
 				}
 			}
@@ -886,7 +883,7 @@ public class QuizChannelHandler implements Runnable {
 	
 	public List<Player> cleanScore() {
 		log.debug("Resetting score...");
-		List<Player> players = playerRepository.findByServerAndChannelIgnoreCaseAndLastAnsweredIsNotNull(bot.getServerHostname(), channel);
+		List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(bot.getServerHostname(), channel);
 		log.info("Loaded {} players", players.size());
 		int cnt = 0;
 		try {
@@ -930,23 +927,23 @@ public class QuizChannelHandler implements Runnable {
 		this.maxStreakPlayer = maxStreakPlayer;
 	}
 	
-	class Duel {
+	static class Duel {
 
-		PlayerDuelScore nick1;
-		PlayerDuelScore nick2;
-		int questions;
+		final PlayerDuelScore firstPlayer;
+		final PlayerDuelScore secondPlayer;
+		final int questions;
+		final long initiatedAt;
 		boolean confirmed;
-		long initiatedAt;
 		long startedAt;
 		long lastActivity;
 
-		Duel(String nick1, String nick2, int questions) {
-			this.nick1 = new PlayerDuelScore(nick1);
-			this.nick2 = new PlayerDuelScore(nick2);
+		Duel(String firstPlayerNick, String secondPlayerNick, int questions) {
+			this.firstPlayer = new PlayerDuelScore(firstPlayerNick);
+			this.secondPlayer = new PlayerDuelScore(secondPlayerNick);
 			this.questions = questions;
 			this.initiatedAt = System.currentTimeMillis();
 			this.lastActivity = this.initiatedAt;
-			confirmed = false;
+			this.confirmed = false;
 		}
 
 		void setLastActivity(long lastActivity) {
@@ -960,22 +957,22 @@ public class QuizChannelHandler implements Runnable {
 		}
 
 		PlayerDuelScore getDuelist(String nick) {
-			if (nick1.nick.equalsIgnoreCase(nick)) return nick1;
-			if (nick2.nick.equalsIgnoreCase(nick)) return nick2;
+			if (firstPlayer.nick.equalsIgnoreCase(nick)) return firstPlayer;
+			if (secondPlayer.nick.equalsIgnoreCase(nick)) return secondPlayer;
 			return null;
 		}
 
 		@Override
 		public String toString() {
-			return "Dvoboj - " + (confirmed  ? "startan: " + TimeUtil.format(startedAt) : "iniciran: " + TimeUtil.format(initiatedAt)) + ", broj pitanja: " + questions + ", stanje: " + this.nick1.nick + " (" + this.nick1.score + ") :" + this.nick2.nick + " (" + this.nick2.score + ")";
+			return "Dvoboj - " + (confirmed  ? "startan: " + TimeUtil.format(startedAt) : "iniciran: " + TimeUtil.format(initiatedAt)) + ", broj pitanja: " + questions + ", stanje: " + this.firstPlayer.nick + " (" + this.firstPlayer.score + ") :" + this.secondPlayer.nick + " (" + this.secondPlayer.score + ")";
 		}
 
 		boolean isFinished() {
-			return nick1.score >= questions || nick2.score >= questions;
+			return firstPlayer.score >= questions || secondPlayer.score >= questions;
 		}
 
-		class PlayerDuelScore {
-			String nick;
+		static class PlayerDuelScore {
+			final String nick;
 			int score;
 
 			PlayerDuelScore(String nick) {
