@@ -53,7 +53,7 @@ irc:
     name: SparkTest
     nick-serv-password: null
     login: callidus
-    real-name: @artifactId@ by ztomic, v@version@
+    real-name: @project.artifactId@ by ztomic, v@project.version@
     max-line-length: 380
     message-limit: 30
     message-limit-interval: 1
