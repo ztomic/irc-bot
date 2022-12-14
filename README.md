@@ -19,4 +19,4 @@
 	* currently quiz comments are mainly written in Croatian
 
 Screenshot (using [KVIrc](http://www.kvirc.net/) as client):
-![Screenshot.jpg](https://raw.githubusercontent.com/ztomic/irc-bot/master/irc-bot/doc/Screenshot.png)
+![Screenshot.jpg](https://raw.githubusercontent.com/ztomic/irc-bot/master/doc/Screenshot.png)
