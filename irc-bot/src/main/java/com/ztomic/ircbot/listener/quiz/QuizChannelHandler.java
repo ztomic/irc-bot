@@ -562,284 +562,263 @@ public class QuizChannelHandler implements Runnable {
 	public synchronized void handleCommand(GenericMessageEvent event, QuizListener.QuizCommand command, User user, String[] arguments) {
 		List<String> args = Arrays.asList(arguments);
 		switch (command) {
-		case H:
-			if (!answered && currentQuestion != null) {
-				sendH();
-			}
-			break;
-		case V:
-			if (!answered && currentQuestion != null) {
-				sendV();
-			}
-			break;
-		case Z:
-			if (!answered && currentQuestion != null) {
-				sendZ();
-			}
-			break;
-		case PONOVI: {
-			if (!answered && currentQuestion != null) {
-				repeatLastQuestion();
-			}
-			break;
-		}
-		case ODG:
-		case ODGOVOR:
-			if (previousQuestionAnswer != null) {
-				event.respond(String.format(getFormats().getLastAnswerFormat(), previousQuestionAnswer));
-			}
-			break;
-		case SCORE:
-		case SVEO: {
-			String nick = user.getNick();
-			if (args.size() >= 1) {
-				nick = args.get(0);
-			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
-			Player player = null;
-			for (Player p : players) {
-				if (p.getNick().equalsIgnoreCase(nick)) {
-					player = p;
-					break;
+			case H -> {
+				if (!answered && currentQuestion != null) {
+					sendH();
 				}
 			}
-			if (player != null) {
-				players.sort(Player.CMP_BY_SCORE);
-				int scorePos = players.indexOf(player) + 1;
-				players.sort(Player.CMP_BY_MONTH_SCORE);
-				int monthPos = players.indexOf(player) + 1;
-				players.sort(Player.CMP_BY_WEEK_SCORE);
-				int weekPos = players.indexOf(player) + 1;
-				players.sort(Player.CMP_BY_SPEED_ASC);
-				int speedPos = players.indexOf(player) + 1;
-				players.sort(Player.CMP_BY_STREAK_ASC);
-				int streekPos = players.indexOf(player) + 1;
-				players.sort(Player.CMP_BY_DUELS);
-				int duelsPos = players.indexOf(player) + 1;
-				players.sort(Player.CMP_BY_DUELS_WON);
-				int duelsWonPos = players.indexOf(player) + 1;
-				event.respond(
-						String.format(getFormats().getJoinStatsFormat(), Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
-			} else {
-				event.respond("Ne postoje podaci o igracu " + Colors.smartColoredNick(nick) + " za kanal " + Colors.paintBoldString(4, channel));
+			case V -> {
+				if (!answered && currentQuestion != null) {
+					sendV();
+				}
 			}
-			break;
-		}
-		case JUMP:
-		case PRESKOCI:
-		case SKIP:
-			jump();
-			break;
-		case SETNEXT:
-			int id = 0;
-			if (args.size() >= 1) {
-				id = Util.parseInt(args.get(0), 0);
+			case Z -> {
+				if (!answered && currentQuestion != null) {
+					sendZ();
+				}
 			}
-			if (id != 0) {
-				nextId = id;
+			case PONOVI -> {
+				if (!answered && currentQuestion != null) {
+					repeatLastQuestion();
+				}
 			}
-			break;
-		case DATEVIDIM: {
-			if (event instanceof MessageEvent e) {
+			case ODG, ODGOVOR -> {
+				if (previousQuestionAnswer != null) {
+					event.respond(String.format(getFormats().getLastAnswerFormat(), previousQuestionAnswer));
+				}
+			}
+			case SCORE, SVEO -> {
+				String nick = user.getNick();
 				if (args.size() >= 1) {
-					String nick2 = args.get(0);
-					int questions = (args.size() == 2 ? Util.parseInt(args.get(1), 10) : 10);
-					org.pircbotx.User user2 = getUser(e.getChannel(), nick2);
-					if (user2 == null) {
-						event.getBot().sendIRC().message(user.getNick(), String.format("Igrac s nadimkom %s nije pronadjen na kanalu %s", Colors.smartColoredNick(nick2), Colors.paintString(Colors.RED, channel)));
-					} else if (user2.getNick().equalsIgnoreCase(user.getNick())) {
-						event.getBot().sendIRC().message(user.getNick(), "{C}4Pokusavate izazvati sami sebe na dvoboj?!");
-					} else if (user2.getNick().equalsIgnoreCase(event.getBot().getUserBot().getNick())) {
-						event.getBot().sendIRC().message(user.getNick(), "{C}4Ne igraj se s vatrom!");
-					} else {
+					nick = args.get(0);
+				}
+				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
+				Player player = null;
+				for (Player p : players) {
+					if (p.getNick().equalsIgnoreCase(nick)) {
+						player = p;
+						break;
+					}
+				}
+				if (player != null) {
+					players.sort(Player.CMP_BY_SCORE);
+					int scorePos = players.indexOf(player) + 1;
+					players.sort(Player.CMP_BY_MONTH_SCORE);
+					int monthPos = players.indexOf(player) + 1;
+					players.sort(Player.CMP_BY_WEEK_SCORE);
+					int weekPos = players.indexOf(player) + 1;
+					players.sort(Player.CMP_BY_SPEED_ASC);
+					int speedPos = players.indexOf(player) + 1;
+					players.sort(Player.CMP_BY_STREAK_ASC);
+					int streekPos = players.indexOf(player) + 1;
+					players.sort(Player.CMP_BY_DUELS);
+					int duelsPos = players.indexOf(player) + 1;
+					players.sort(Player.CMP_BY_DUELS_WON);
+					int duelsWonPos = players.indexOf(player) + 1;
+					event.respond(
+							String.format(getFormats().getJoinStatsFormat(), Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
+				} else {
+					event.respond("Ne postoje podaci o igracu " + Colors.smartColoredNick(nick) + " za kanal " + Colors.paintBoldString(4, channel));
+				}
+			}
+			case JUMP, PRESKOCI, SKIP -> jump();
+			case SETNEXT -> {
+				int id = 0;
+				if (args.size() >= 1) {
+					id = Util.parseInt(args.get(0), 0);
+				}
+				if (id != 0) {
+					nextId = id;
+				}
+			}
+			case DATEVIDIM -> {
+				if (event instanceof MessageEvent e) {
+					if (args.size() >= 1) {
+						String nick2 = args.get(0);
+						int questions = (args.size() == 2 ? Util.parseInt(args.get(1), 10) : 10);
+						org.pircbotx.User user2 = getUser(e.getChannel(), nick2);
+						if (user2 == null) {
+							event.getBot().sendIRC().message(user.getNick(), String.format("Igrac s nadimkom %s nije pronadjen na kanalu %s", Colors.smartColoredNick(nick2), Colors.paintString(Colors.RED, channel)));
+						} else if (user2.getNick().equalsIgnoreCase(user.getNick())) {
+							event.getBot().sendIRC().message(user.getNick(), "{C}4Pokusavate izazvati sami sebe na dvoboj?!");
+						} else if (user2.getNick().equalsIgnoreCase(event.getBot().getUserBot().getNick())) {
+							event.getBot().sendIRC().message(user.getNick(), "{C}4Ne igraj se s vatrom!");
+						} else {
 
-						synchronized (duels) {
-							Duel hasDuel = null;
-							for (Duel d : duels) {
-								if ((d.firstPlayer.nick.equalsIgnoreCase(user.getNick()) && d.secondPlayer.nick.equalsIgnoreCase(nick2)) || (d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && d.firstPlayer.nick.equalsIgnoreCase(nick2))) {
-									hasDuel = d;
-									break;
+							synchronized (duels) {
+								Duel hasDuel = null;
+								for (Duel d : duels) {
+									if ((d.firstPlayer.nick.equalsIgnoreCase(user.getNick()) && d.secondPlayer.nick.equalsIgnoreCase(nick2)) || (d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && d.firstPlayer.nick.equalsIgnoreCase(nick2))) {
+										hasDuel = d;
+										break;
+									}
 								}
-							}
-							if (hasDuel == null) {
-								duels.add(new Duel(user.getNick(), user2.getNick(), questions));
-								event.getBot().sendIRC().message(nick2, String.format("%s vas je izazva[o|la] na dvoboj do %s. Potvrdite sa %s, odbijte sa %s.", Colors.smartColoredNick(user.getNick()), Colors.paintString(Colors.RED, questions), Colors.paintString(Colors.DARK_GREEN, quizListener.getCommandPrefix() + QuizCommand.MRTAVSI), Colors.paintString(Colors.BLUE, quizListener.getCommandPrefix() + QuizCommand.ODBIJ)));
-							} else {
-								if (!hasDuel.confirmed) {
-									event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste izazvali %s na dvoboj!", Colors.smartColoredNick(nick2)));
+								if (hasDuel == null) {
+									duels.add(new Duel(user.getNick(), user2.getNick(), questions));
+									event.getBot().sendIRC().message(nick2, String.format("%s vas je izazva[o|la] na dvoboj do %s. Potvrdite sa %s, odbijte sa %s.", Colors.smartColoredNick(user.getNick()), Colors.paintString(Colors.RED, questions), Colors.paintString(Colors.DARK_GREEN, quizListener.getCommandPrefix() + QuizCommand.MRTAVSI), Colors.paintString(Colors.BLUE, quizListener.getCommandPrefix() + QuizCommand.ODBIJ)));
 								} else {
-									event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste u dvoboju s %s!", Colors.smartColoredNick(nick2)));
+									if (!hasDuel.confirmed) {
+										event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste izazvali %s na dvoboj!", Colors.smartColoredNick(nick2)));
+									} else {
+										event.getBot().sendIRC().message(user.getNick(), String.format("Vec ste u dvoboju s %s!", Colors.smartColoredNick(nick2)));
+									}
 								}
 							}
 						}
 					}
 				}
-			}
 
-			break;
-		}
-		case MRTAVSI:
-		case MRTVASI: {
-			String challenger = null;
-			if (args.size() == 1) {
-				challenger = args.get(0);
 			}
-			synchronized (duels) {
-				Duel found = null;
-				for (Duel d : duels) {
-					if (!d.confirmed && d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.firstPlayer.nick.equalsIgnoreCase(challenger))) {
-						found = d;
-						break;
-					}
-				}
-				if (found == null) {
-					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
-					else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
-				} else {
-					found.confirm();
-
-					Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.firstPlayer.nick);
-					if (p1 != null) {
-						p1.incrementDuels();
-						p1 = playerRepository.save(p1);
-					}
-					Player p2 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.secondPlayer.nick);
-					if (p2 != null) {
-						p2.incrementDuels();
-						p2 = playerRepository.save(p2);
-					}
-					event.getBot().sendIRC().message(channel, String.format("Od iduceg pitanja krece dvoboj do %s izmedju %s i %s!", Colors.paintString(Colors.RED, found.questions), Colors.smartColoredNick(found.firstPlayer.nick), Colors.smartColoredNick(found.secondPlayer.nick)));
-				}
-			}
-
-			break;
-		}
-		case NECU:
-		case ODBIJ: {
-			synchronized (duels) {
+			case MRTAVSI, MRTVASI -> {
 				String challenger = null;
 				if (args.size() == 1) {
 					challenger = args.get(0);
 				}
-				Duel found = null;
-				for (Duel d : duels) {
-					if (!d.confirmed && d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.firstPlayer.nick.equalsIgnoreCase(challenger))) {
-						found = d;
-						break;
-					}
-				}
-				if (found == null) {
-					if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
-					else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
-				} else {
-					event.getBot().sendIRC().message(found.firstPlayer.nick, Colors.smartColoredNick(found.secondPlayer.nick)+ " je odbi[o|la] poziv na dvoboj.");
-					duels.remove(found);
-				}
-			}
-			break;
-		}
-		case SVIDVOBOJI: {
-			if (duels.isEmpty()) {
-				event.getBot().sendIRC().message(user.getNick(), "{C}4Nema aktivnih dvoboja.");
-			} else {
 				synchronized (duels) {
-					event.getBot().sendIRC().message(user.getNick(), "{C}3Dvoboji na kanalu " + channel + ":");
+					Duel found = null;
 					for (Duel d : duels) {
-						event.getBot().sendIRC().message(user.getNick(), d.toString());
+						if (!d.confirmed && d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.firstPlayer.nick.equalsIgnoreCase(challenger))) {
+							found = d;
+							break;
+						}
+					}
+					if (found == null) {
+						if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
+						else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
+					} else {
+						found.confirm();
+
+						Player p1 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.firstPlayer.nick);
+						if (p1 != null) {
+							p1.incrementDuels();
+							p1 = playerRepository.save(p1);
+						}
+						Player p2 = playerRepository.findByServerAndChannelIgnoreCaseAndNickIgnoreCase(event.getBot().getServerHostname(), channel, found.secondPlayer.nick);
+						if (p2 != null) {
+							p2.incrementDuels();
+							p2 = playerRepository.save(p2);
+						}
+						event.getBot().sendIRC().message(channel, String.format("Od iduceg pitanja krece dvoboj do %s izmedju %s i %s!", Colors.paintString(Colors.RED, found.questions), Colors.smartColoredNick(found.firstPlayer.nick), Colors.smartColoredNick(found.secondPlayer.nick)));
+					}
+				}
+
+			}
+			case NECU, ODBIJ -> {
+				synchronized (duels) {
+					String challenger = null;
+					if (args.size() == 1) {
+						challenger = args.get(0);
+					}
+					Duel found = null;
+					for (Duel d : duels) {
+						if (!d.confirmed && d.secondPlayer.nick.equalsIgnoreCase(user.getNick()) && (challenger == null || d.firstPlayer.nick.equalsIgnoreCase(challenger))) {
+							found = d;
+							break;
+						}
+					}
+					if (found == null) {
+						if (challenger == null) event.getBot().sendIRC().message(user.getNick(), "{C}4Nemate dvoboja koji cekaju potvrdu!");
+						else event.getBot().sendIRC().message(user.getNick(), String.format("Niste izazvani od %s!", Colors.smartColoredNick(challenger)));
+					} else {
+						event.getBot().sendIRC().message(found.firstPlayer.nick, Colors.smartColoredNick(found.secondPlayer.nick) + " je odbi[o|la] poziv na dvoboj.");
+						duels.remove(found);
 					}
 				}
 			}
-			break;
-		}
-		case RELOAD: {
-			reloadQuestions();
-			break;
-		}
-		case TOP3:
-		case TOP10:
-			String category = "score";
-			if (args.size() >= 1) {
-				category = args.get(0);
-				if (args.size() == 2) {
-					category = args.get(0) + " " + args.get(1);
-				}
-			} else {
-				event.respond("Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
-			}
-			List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
-
-			if (players.isEmpty()) {
-				event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
-				break;
-			}
-
-			if (category.equalsIgnoreCase("score")) {
-				players.sort(Player.CMP_BY_SCORE);
-				players.removeIf(player -> player.getScore() == 0);
-			} else if (category.equalsIgnoreCase("month")) {
-				players.sort(Player.CMP_BY_MONTH_SCORE);
-				players.removeIf(player -> player.getMonthScore() == 0);
-			} else if (category.equalsIgnoreCase("week")) {
-				players.sort(Player.CMP_BY_WEEK_SCORE);
-				players.removeIf(player -> player.getWeekScore() == 0);
-			} else if (category.equalsIgnoreCase("row")) {
-				players.sort(Player.CMP_BY_STREAK_ASC);
-				players.removeIf(player -> player.getRowRecord() == 0);
-			} else if (category.equalsIgnoreCase("speed")) {
-				players.sort(Player.CMP_BY_SPEED_ASC);
-				players.removeIf(player -> player.getFastestTime() == 0);
-			} else if (category.equalsIgnoreCase("duels")) {
-				players.sort(Player.CMP_BY_DUELS);
-				players.removeIf(player -> player.getDuels() == 0);
-			} else if (category.equalsIgnoreCase("duels won")) {
-				players.sort(Player.CMP_BY_DUELS_WON);
-				players.removeIf(player -> player.getDuelsWon() == 0);
-			} else {
-				category = "score";
-				players.sort(Player.CMP_BY_SCORE);
-				players.removeIf(player -> player.getScore() == 0);
-			}
-
-			if (players.isEmpty()) {
-				event.respond(String.format("Nema %s igraca (server:%s, kanal:%s) u kategoriji:%s!", command, Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
-				break;
-			}
-
-			List<Player> all = new ArrayList<>(players);
-
-			StringBuilder response = new StringBuilder();
-			response.append(String.format("%s igraca (server:%s, kanal:%s) u kategoriji:%s\n", command, Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
-			int i = 1;
-			for (Player player : players) {
-				all.sort(Player.CMP_BY_SCORE);
-				int scorePos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_MONTH_SCORE);
-				int monthPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_WEEK_SCORE);
-				int weekPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_SPEED_ASC);
-				int speedPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_STREAK_ASC);
-				int streekPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_DUELS);
-				int duelsPos = all.indexOf(player) + 1;
-				all.sort(Player.CMP_BY_DUELS_WON);
-				int duelsWonPos = all.indexOf(player) + 1;
-				response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ")).append(String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
-				if (command == QuizCommand.TOP3) {
-					if (i == 3) {
-						break;
+			case SVIDVOBOJI -> {
+				if (duels.isEmpty()) {
+					event.getBot().sendIRC().message(user.getNick(), "{C}4Nema aktivnih dvoboja.");
+				} else {
+					synchronized (duels) {
+						event.getBot().sendIRC().message(user.getNick(), "{C}3Dvoboji na kanalu " + channel + ":");
+						for (Duel d : duels) {
+							event.getBot().sendIRC().message(user.getNick(), d.toString());
+						}
 					}
 				}
-				if (command == QuizCommand.TOP10) {
-					if (i == 10) {
-						break;
-					}
-				}
-				i++;
 			}
-			event.respond(response.toString());
-			break;
+			case RELOAD -> {
+				reloadQuestions();
+			}
+			case TOP3, TOP10 -> {
+				String category = "score";
+				if (args.size() >= 1) {
+					category = args.get(0);
+					if (args.size() == 2) {
+						category = args.get(0) + " " + args.get(1);
+					}
+				} else {
+					event.respond("Dostupne kategorije za {C}4" + command + "{C}: {C}12score, month, week, row, speed, duels, duels won{C}");
+				}
+				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
+				if (players.isEmpty()) {
+					event.respond(String.format("Nema bodovne liste igraca (server:%s, kanal:%s)!", Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel)));
+					break;
+				}
+				if (category.equalsIgnoreCase("score")) {
+					players.sort(Player.CMP_BY_SCORE);
+					players.removeIf(player -> player.getScore() == 0);
+				} else if (category.equalsIgnoreCase("month")) {
+					players.sort(Player.CMP_BY_MONTH_SCORE);
+					players.removeIf(player -> player.getMonthScore() == 0);
+				} else if (category.equalsIgnoreCase("week")) {
+					players.sort(Player.CMP_BY_WEEK_SCORE);
+					players.removeIf(player -> player.getWeekScore() == 0);
+				} else if (category.equalsIgnoreCase("row")) {
+					players.sort(Player.CMP_BY_STREAK_ASC);
+					players.removeIf(player -> player.getRowRecord() == 0);
+				} else if (category.equalsIgnoreCase("speed")) {
+					players.sort(Player.CMP_BY_SPEED_ASC);
+					players.removeIf(player -> player.getFastestTime() == 0);
+				} else if (category.equalsIgnoreCase("duels")) {
+					players.sort(Player.CMP_BY_DUELS);
+					players.removeIf(player -> player.getDuels() == 0);
+				} else if (category.equalsIgnoreCase("duels won")) {
+					players.sort(Player.CMP_BY_DUELS_WON);
+					players.removeIf(player -> player.getDuelsWon() == 0);
+				} else {
+					category = "score";
+					players.sort(Player.CMP_BY_SCORE);
+					players.removeIf(player -> player.getScore() == 0);
+				}
+				if (players.isEmpty()) {
+					event.respond(String.format("Nema %s igraca (server:%s, kanal:%s) u kategoriji:%s!", command, Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+					break;
+				}
+				List<Player> all = new ArrayList<>(players);
+				StringBuilder response = new StringBuilder();
+				response.append(String.format("%s igraca (server:%s, kanal:%s) u kategoriji:%s\n", command, Colors.paintString(Colors.BLUE, event.getBot().getServerHostname()), Colors.paintString(Colors.DARK_GREEN, channel), Colors.paintString(Colors.RED, category)));
+				int i = 1;
+				for (Player player : players) {
+					all.sort(Player.CMP_BY_SCORE);
+					int scorePos = all.indexOf(player) + 1;
+					all.sort(Player.CMP_BY_MONTH_SCORE);
+					int monthPos = all.indexOf(player) + 1;
+					all.sort(Player.CMP_BY_WEEK_SCORE);
+					int weekPos = all.indexOf(player) + 1;
+					all.sort(Player.CMP_BY_SPEED_ASC);
+					int speedPos = all.indexOf(player) + 1;
+					all.sort(Player.CMP_BY_STREAK_ASC);
+					int streekPos = all.indexOf(player) + 1;
+					all.sort(Player.CMP_BY_DUELS);
+					int duelsPos = all.indexOf(player) + 1;
+					all.sort(Player.CMP_BY_DUELS_WON);
+					int duelsWonPos = all.indexOf(player) + 1;
+					response.append(Colors.paintBoldString(Colors.BLUE, "#" + i + " ")).append(String.format(getFormats().getJoinStatsFormat() + "\n", Colors.smartColoredNick(player.getNick()), player.getScore(), scorePos, player.getMonthScore(), monthPos, player.getWeekScore(), weekPos, player.getFastestTime() / 1000F, speedPos, player.getRowRecord(), streekPos, player.getDuels(), duelsPos, player.getDuelsWon(), duelsWonPos));
+					if (command == QuizCommand.TOP3) {
+						if (i == 3) {
+							break;
+						}
+					}
+					if (command == QuizCommand.TOP10) {
+						if (i == 10) {
+							break;
+						}
+					}
+					i++;
+				}
+				event.respond(response.toString());
+			}
 		}
 	}
 

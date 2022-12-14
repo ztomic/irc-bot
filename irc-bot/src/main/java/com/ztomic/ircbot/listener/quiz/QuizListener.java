@@ -297,134 +297,130 @@ public class QuizListener extends CommandListener {
 				}
 			}
 		}
-		
+
 		switch (command) {
-		case START:
-			String lang = null;
-			if (args.size() >= 1) {
-				lang = args.get(0);
+			case START -> {
+				String lang = null;
+				if (args.size() >= 1) {
+					lang = args.get(0);
+				}
+				startQuiz(event.getBot(), channel, lang);
 			}
-			startQuiz(event.getBot(), channel, lang);
-			break;
-		case STOP:
-			stopQuiz(event.getBot(), channel);
-			log.info("User {} has stopped quiz at {}", user, channel);
-			event.getBot().sendIRC().message(channel, "{C}4Kviz je zaustavljen.");
-			break;
-		case SET:
-			if (args.size() >= 2) {
-				String param = args.get(0);
-				String value = args.get(1);
-				try {
-					if (StringUtils.hasText(value)) {
-						Field f = ReflectionUtils.findField(quizSettings.getClass(), param);
-						if (f != null) {
-							ReflectionUtils.makeAccessible(f);
-							Object old = ReflectionUtils.getField(f, quizSettings);
-							if (f.getType() == int.class || f.getType() == Integer.class) {
-								int _value = Util.parseInt(value, f.getInt(quizSettings));
-								f.setInt(quizSettings, _value);
-							} else if (f.getType() == double.class || f.getType() == Double.class) {
-								double _value = 0d;
-								try {
-									_value = Double.parseDouble(value);
-								} catch (NumberFormatException ne) {
-									_value = f.getDouble(quizSettings);
+			case STOP -> {
+				stopQuiz(event.getBot(), channel);
+				log.info("User {} has stopped quiz at {}", user, channel);
+				event.getBot().sendIRC().message(channel, "{C}4Kviz je zaustavljen.");
+			}
+			case SET -> {
+				if (args.size() >= 2) {
+					String param = args.get(0);
+					String value = args.get(1);
+					try {
+						if (StringUtils.hasText(value)) {
+							Field f = ReflectionUtils.findField(quizSettings.getClass(), param);
+							if (f != null) {
+								ReflectionUtils.makeAccessible(f);
+								Object old = ReflectionUtils.getField(f, quizSettings);
+								if (f.getType() == int.class || f.getType() == Integer.class) {
+									int _value = Util.parseInt(value, f.getInt(quizSettings));
+									f.setInt(quizSettings, _value);
+								} else if (f.getType() == double.class || f.getType() == Double.class) {
+									double _value = 0d;
+									try {
+										_value = Double.parseDouble(value);
+									} catch (NumberFormatException ne) {
+										_value = f.getDouble(quizSettings);
+									}
+									f.setDouble(quizSettings, _value);
+								} else if (f.getType() == String.class) {
+									f.set(quizSettings, value);
+								} else if (f.getType() == char.class || f.getType() == Character.class) {
+									f.setChar(quizSettings, value.charAt(0));
+								} else if (f.getType() == boolean.class || f.getType() == Boolean.class) {
+									f.setBoolean(quizSettings, Util.parseBool(value));
+								} else if (List.class.isAssignableFrom(f.getType())) {
+									f.set(quizSettings, Util.parseList(value, ","));
 								}
-								f.setDouble(quizSettings, _value);
-							} else if (f.getType() == String.class) {
-								f.set(quizSettings, value);
-							} else if (f.getType() == char.class || f.getType() == Character.class) {
-								f.setChar(quizSettings, value.charAt(0));
-							} else if (f.getType() == boolean.class || f.getType() == Boolean.class) {
-								f.setBoolean(quizSettings, Util.parseBool(value));
-							} else if (List.class.isAssignableFrom(f.getType())) {
-								f.set(quizSettings, Util.parseList(value, ","));
+								event.getBot().sendIRC().message(user.getNick(), String.format(getQuizMessages().getFormats().getChangedSettingFormat(), param, old, f.get(quizSettings)));
+							} else {
+								event.getBot().sendIRC().message(user.getNick(), "{C}4No config{C}3 " + param + " {C}4found. See GET command for available options.");
 							}
-							event.getBot().sendIRC().message(user.getNick(), String.format(getQuizMessages().getFormats().getChangedSettingFormat(), param, old, f.get(quizSettings)));
-						} else {
-							event.getBot().sendIRC().message(user.getNick(), "{C}4No config{C}3 " + param + " {C}4found. See GET command for available options.");
 						}
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						log.error("Error with setting field (SET cmd)..", e);
 					}
-				} catch (IllegalArgumentException | IllegalAccessException e) {
-					log.error("Error with setting field (SET cmd)..", e);
-				}
-				break;
-			}
-			break;
-		case GET:
-			List<String> resp = new ArrayList<>();
-			ReflectionUtils.doWithFields(quizSettings.getClass(), f -> {
-				try {
-					ReflectionUtils.makeAccessible(f);
-					resp.add(Colors.paintString(Colors.BLUE, f.getName()) + " (" + Colors.paintString(Colors.DARK_GREEN, f.getType().getSimpleName()) + ") =" + Colors.paintString(Colors.RED, f.get(quizSettings)));
-				} catch (Throwable t) {
-					//
-				}
-			});
-			if (!resp.isEmpty()) {
-				event.getBot().sendIRC().message(user.getNick(), formatCollection(resp, "; "));
-			}
-			break;
-		case IGNORENICK: {
-			if (args.size() == 1) {
-				String nick = args.get(0).trim();
-				if (isIgnoredNick(nick)) {
-					event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is already ignored");
-				} else {
-					quizSettings.getIgnoredNicks().add(nick.trim());
-					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] added to ignore list. New list: " + formatCollection(quizSettings.getIgnoredNicks(), ","));
 				}
 			}
-			break;
-		}
-		case UNIGNORENICK: {
-			if (args.size() == 1) {
-				String nick = args.get(0).trim();
-				if (!isIgnoredNick(nick)) {
-					event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is not ignored");
-				} else {
-					quizSettings.getIgnoredNicks().removeIf(n -> n.equalsIgnoreCase(nick));
-					event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(quizSettings.getIgnoredNicks(), ","));
+			case GET -> {
+				List<String> resp = new ArrayList<>();
+				ReflectionUtils.doWithFields(quizSettings.getClass(), f -> {
+					try {
+						ReflectionUtils.makeAccessible(f);
+						resp.add(Colors.paintString(Colors.BLUE, f.getName()) + " (" + Colors.paintString(Colors.DARK_GREEN, f.getType().getSimpleName()) + ") =" + Colors.paintString(Colors.RED, f.get(quizSettings)));
+					} catch (Throwable t) {
+						//
+					}
+				});
+				if (!resp.isEmpty()) {
+					event.getBot().sendIRC().message(user.getNick(), formatCollection(resp, "; "));
 				}
 			}
-			break;
-		}
-		case ERROR: {
-			if (args.size() >= 2) {
-				log.info("User {} is reporting error at question {}", user, args);
-				long questionNumber = Util.parseLong(args.get(0), -1);
-				if (questionNumber != -1) {
-					Optional<Question> question = questionRepository.findById(questionNumber);
-					if (question.isPresent()) {
-						Question q = question.get();
-						String reason = String.join(" ", args.subList(1, args.size()));
-						QuestionError error = new QuestionError();
-						error.setQuestionId(q.getId());
-						error.setReason(reason);
-						error.setUserId(user.getId());
-						error.setTimeReported(LocalDateTime.now());
-						error = questionErrorRepository.save(error);
-						event.getBot().sendIRC().message(user.getNick(), "Vasa prijava broj " + Colors.paintString(Colors.BLUE, error.getId()) + " za pitanje " + String.format(getQuizMessages().getFormats().getQuestionFormat(), q.getId(), q.getTheme(), q.getQuestion()) + " sa razlogom " + Colors.paintString(Colors.RED, reason) + " je zabiljezena. Hvala!");
+			case IGNORENICK -> {
+				if (args.size() == 1) {
+					String nick = args.get(0).trim();
+					if (isIgnoredNick(nick)) {
+						event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is already ignored");
 					} else {
-						event.getBot().sendIRC().message(user.getNick(), "Pitanje sa brojem " + Colors.paintString(Colors.DARK_GREEN, questionNumber) + " nije pronađeno.");
+						quizSettings.getIgnoredNicks().add(nick.trim());
+						event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] added to ignore list. New list: " + formatCollection(quizSettings.getIgnoredNicks(), ","));
+					}
+				}
+			}
+			case UNIGNORENICK -> {
+				if (args.size() == 1) {
+					String nick = args.get(0).trim();
+					if (!isIgnoredNick(nick)) {
+						event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is not ignored");
+					} else {
+						quizSettings.getIgnoredNicks().removeIf(n -> n.equalsIgnoreCase(nick));
+						event.getBot().sendIRC().message(user.getNick(), "{C}3Nick [" + nick + "] removed from ignore list. New list: " + formatCollection(quizSettings.getIgnoredNicks(), ","));
+					}
+				}
+			}
+			case ERROR -> {
+				if (args.size() >= 2) {
+					log.info("User {} is reporting error at question {}", user, args);
+					long questionNumber = Util.parseLong(args.get(0), -1);
+					if (questionNumber != -1) {
+						Optional<Question> question = questionRepository.findById(questionNumber);
+						if (question.isPresent()) {
+							Question q = question.get();
+							String reason = String.join(" ", args.subList(1, args.size()));
+							QuestionError error = new QuestionError();
+							error.setQuestionId(q.getId());
+							error.setReason(reason);
+							error.setUserId(user.getId());
+							error.setTimeReported(LocalDateTime.now());
+							error = questionErrorRepository.save(error);
+							event.getBot().sendIRC().message(user.getNick(), "Vasa prijava broj " + Colors.paintString(Colors.BLUE, error.getId()) + " za pitanje " + String.format(getQuizMessages().getFormats().getQuestionFormat(), q.getId(), q.getTheme(), q.getQuestion()) + " sa razlogom " + Colors.paintString(Colors.RED, reason) + " je zabiljezena. Hvala!");
+						} else {
+							event.getBot().sendIRC().message(user.getNick(), "Pitanje sa brojem " + Colors.paintString(Colors.DARK_GREEN, questionNumber) + " nije pronađeno.");
+						}
+					} else {
+						event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + getCommandPrefix() + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
 					}
 				} else {
 					event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + getCommandPrefix() + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
 				}
-			} else {
-				event.getBot().sendIRC().message(user.getNick(), "Vasa prijava nije ispravna! Molimo prijavite u formatu: " + getCommandPrefix() + QuizCommand.ERROR.name() + " " + Colors.paintString(Colors.DARK_GREEN, "BROJPITANJA") + " " + Colors.paintString(Colors.RED, "razlog"));
 			}
-			break;
-		}
-		default:
-			QuizChannelHandler quizChannelHandler = getQuizChannelHandler(event.getBot(), channel, null, false);
-			if (quizChannelHandler != null) {
-				quizChannelHandler.handleCommand(event, command, user, arguments);
-			} else {
-				log.debug("Not found quiz channel handler for key {}, valid keys are: {}", event.getBot().getServerHostname() + ":" + channel, quizChannelHandlers.keySet());
+			default -> {
+				QuizChannelHandler quizChannelHandler = getQuizChannelHandler(event.getBot(), channel, null, false);
+				if (quizChannelHandler != null) {
+					quizChannelHandler.handleCommand(event, command, user, arguments);
+				} else {
+					log.debug("Not found quiz channel handler for key {}, valid keys are: {}", event.getBot().getServerHostname() + ":" + channel, quizChannelHandlers.keySet());
+				}
 			}
-			break;
 		}
 	}
 	

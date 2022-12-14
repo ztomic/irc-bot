@@ -2,7 +2,6 @@ package com.ztomic.ircbot.model.converter;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
@@ -27,8 +26,7 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
 	public List<String> convertToEntityAttribute(String dbData) {
 		List<String> sl = new LinkedList<>();
 		if (dbData != null) {
-			Pattern.compile("\n")
-					.splitAsStream(dbData)
+			dbData.lines()
 					.filter(StringUtils::hasText)
 					.forEach(sl::add);
 		}

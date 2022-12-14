@@ -1,0 +1,165 @@
+plugins {
+    id 'org.springframework.boot' version '2.7.6'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+    id 'java'
+    id 'java-library'
+    id 'distribution'
+    id 'maven-publish'
+}
+
+group = 'com.ztomic.ircbot'
+version = '2.0.2-SNAPSHOT'
+description = 'irc-bot'
+java.sourceCompatibility = JavaVersion.VERSION_17
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    deploymentZip
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+
+    maven {
+        url = uri('https://jitpack.io')
+    }
+}
+
+/* Copy SQL scripts from src/main/resources to deploy/sql */
+task copySqlScripts(type: Copy) {
+    group = 'distribution'
+    from("src/main/resources/")
+    into("$buildDir/deploy/sql")
+    include "*.sql"
+}
+
+/* Copy deploy directory and replace placeholders in .sh scripts */
+task copyDeploy(type: Copy) {
+    group = 'distribution'
+    dependsOn copySqlScripts
+    from("deploy/")
+    into("$buildDir/deploy")
+    duplicatesStrategy 'include'
+    filesMatching("**/*.sh") {
+        project.properties.findAll {it.value != null}.each {
+            filter(ReplaceTokens,
+                    beginToken : '${',
+                    endToken : '}',
+                    tokens: [
+                            (it.key): it.value.toString(),
+                            ("project." + it.key): it.value.toString(),
+                            ("pom." + it.key): it.value.toString()
+                    ])
+        }
+        filter(ReplaceTokens, beginToken : '${',
+                endToken : '}',
+                tokens: [
+                        'project.artifactId': project.property('name'),
+                        'project.groupId': project.property('group'),
+                        'pom.artifactId': project.property('name'),
+                        'pom.groupId': project.property('group')
+                ])
+    }
+}
+
+distributions {
+    main {
+        contents {
+            from copyDeploy
+            from bootJar
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+    implementation 'com.github.pircbotx:pircbotx:2.2'
+
+    runtimeOnly  'org.hsqldb:hsqldb'
+    runtimeOnly  'com.h2database:h2'
+    runtimeOnly  'com.mysql:mysql-connector-j'
+    
+    implementation 'org.codehaus.janino:janino'
+    
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+/* Replace tokens in application*.yml configurations */
+import org.apache.tools.ant.filters.ReplaceTokens
+processResources {
+    with copySpec {
+        from 'src/main/resources'
+        include 'application*.yml'
+        duplicatesStrategy 'include'
+        project.properties.findAll {it.value != null}.each {
+            filter(ReplaceTokens, tokens: [
+                    (it.key): it.value.toString(),
+                    ("project." + it.key): it.value.toString()
+            ])
+        }
+        filter(ReplaceTokens, tokens: [
+                'project.artifactId': project.property('name'),
+                'project.groupId': project.property('group')
+        ])
+    }
+}
+
+publishing {
+    publications {
+        mavenPublication(MavenPublication) {
+            /* Uncomment to publish plain jar, module and sources jar */
+            //from components.java
+
+            /* Publish Spring Boot runnable jar if PUBLISH_BOOT_JAR environment variable is set to 'true' */
+            boolean publishBootJar = System.getenv("PUBLISH_BOOT_JAR") ?: false
+            if (publishBootJar && project.tasks.findByName('bootJar') && project.tasks.findByName('bootJar').enabled) {
+                artifact bootJar
+            }
+            /* Publish distribution zip archive */
+            if (project.tasks.findByName('distZip') && project.tasks.findByName('distZip').enabled) {
+                artifact source: distZip, classifier: 'deploy', extension: 'zip'
+            }
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
+}
+
+springBoot {
+    buildInfo()
+}
+
+java {
+    withSourcesJar()
+}
+
+tasks.distTar {
+    enabled = false
+}
+
+tasks.named('bootJar') {
+    launchScript {
+        properties 'mode': 'service'
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
