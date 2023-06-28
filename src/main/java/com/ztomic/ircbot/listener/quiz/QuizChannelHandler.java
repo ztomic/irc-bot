@@ -308,8 +308,8 @@ public class QuizChannelHandler implements Runnable {
 				}
 
 			}
-			if (quizSettings.isShowGuessed() && !oldHint.equals(hint.toString()) && phase >= quizSettings.getShowGuessedPhase()) {
-				sendMessage(channel, String.format(getFormats().getGuessedFormat(), hint.toString()));
+			if (quizSettings.isShowGuessed() && !oldHint.contentEquals(hint) && phase >= quizSettings.getShowGuessedPhase()) {
+				sendMessage(channel, String.format(getFormats().getGuessedFormat(), hint));
 			}
 		}
 	}

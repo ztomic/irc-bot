@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.6'
-    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+    id 'org.springframework.boot' version '3.1.1'
+    id 'io.spring.dependency-management' version '1.1.0'
     id 'java'
     id 'java-library'
     id 'distribution'
@@ -77,7 +77,7 @@ distributions {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-json'
-    implementation 'com.github.pircbotx:pircbotx:2.2'
+    implementation 'com.github.pircbotx:pircbotx:2.3.1'
 
     runtimeOnly  'org.hsqldb:hsqldb'
     runtimeOnly  'com.h2database:h2'

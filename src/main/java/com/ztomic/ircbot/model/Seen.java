@@ -1,18 +1,20 @@
 package com.ztomic.ircbot.model;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.Properties;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Lob;
-import javax.persistence.Table;
+import com.ztomic.ircbot.model.converter.PropertiesConverter;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 
 import lombok.Data;
 
@@ -53,7 +55,8 @@ public class Seen {
 	private String name;
 
 	@Column
-	private HashMap<String, String> detail;
+	@Convert(converter = PropertiesConverter.class)
+	private Properties detail;
 
 	@Column
 	private LocalDateTime time;
@@ -64,7 +67,7 @@ public class Seen {
 
 	public void addDetail(String key, String value) {
 		if (detail == null) {
-			detail = new HashMap<>();
+			detail = new Properties();
 		}
 		detail.put(key, value);
 	}
@@ -73,7 +76,7 @@ public class Seen {
 		if (detail == null) {
 			return null;
 		}
-		return detail.get(key);
+		return detail.getProperty(key);
 	}
 
 }

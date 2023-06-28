@@ -24,7 +24,7 @@ public class Formats {
 	private String listenerAvailableCommandsFormat = "{C}12 Available commands in listener {C}{C}3{B}%s{B}{C}{C}12 for your level ( {C}{C}4{B}%s{B}{C}{C}12 ) - prefix is:  {C}{C}4 %s {C}{C}12 : {C}{C}3 %s {C}";
 	private String noAvailableCommandsFormat = "No available commands found for you (your level is: {B}%s{B})";
 	private String scoreFormat = "Rezultati igraca: {C}0,1 %s {C}{NL}Ukupan score:{C}3 %s {C}, Najbrzi odgovor:{C}3 %s {C}, Najdulji niz:{C}3 %s {C}, Ovaj mjesec bodova:{C}3 %s {C}, Ovaj tjedan bodova:{C}3 %s {C}";
-	private String testFormat = "{C}4%s{C}: {C}2,8Hello{O}, {B}how are {U}you{U}?{B}{C}12I am {R}good{O}.";
+	private String testFormat = "{C}4%s{C}: {C}2,8Hello{O}, {B}how are {U}you{U}?{B}{C}12 I am {R}good{O}.";
 
 	private String changedSettingFormat = "Value of {C}12%s{C} changed from{C}4 %s{C} to{C}3 %s{C}";
 	private String settingValueFormat = "Value of {C}12%s{C} is{C}3 %s{C}";

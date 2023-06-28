@@ -10,22 +10,23 @@ import com.ztomic.ircbot.repository.QuestionRepository;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
 @Transactional
-@ConfigurationProperties("questions.loader")
 @ConditionalOnProperty(prefix = "questions.loader", value = "file")
 public class QuestionLoader extends JsonDataLoader implements CommandLineRunner {
 
 	private final QuestionRepository questionRepository;
-
-	public QuestionLoader(QuestionRepository questionRepository) {
+	
+	public QuestionLoader(QuestionRepository questionRepository, @Value("${question.loader.file:}") Resource file) {
+		setFile(file);
 		this.questionRepository = questionRepository;
 	}
 

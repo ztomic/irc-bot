@@ -5,9 +5,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceException;
 
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.orm.jpa.EntityManagerFactoryUtils;
@@ -63,8 +63,8 @@ public class PersistenceThreadPoolExecutor extends ThreadPoolExecutor {
 	 * Set the JPA EntityManagerFactory that should be used to create
 	 * EntityManagers.
 	 * 
-	 * @see javax.persistence.EntityManagerFactory#createEntityManager()
-	 * @see javax.persistence.EntityManagerFactory#createEntityManager(java.util.Map)
+	 * @see jakarta.persistence.EntityManagerFactory#createEntityManager()
+	 * @see jakarta.persistence.EntityManagerFactory#createEntityManager(java.util.Map)
 	 */
 	public void setEntityManagerFactory(EntityManagerFactory emf) {
 		log.debug("Using EntityManagerFactory: {}", emf);
@@ -78,7 +78,7 @@ public class PersistenceThreadPoolExecutor extends ThreadPoolExecutor {
 	 * 
 	 * @param emf
 	 *            the EntityManagerFactory to use
-	 * @see javax.persistence.EntityManagerFactory#createEntityManager()
+	 * @see jakarta.persistence.EntityManagerFactory#createEntityManager()
 	 */
 	protected EntityManager createEntityManager(EntityManagerFactory emf) {
 		return emf.createEntityManager();

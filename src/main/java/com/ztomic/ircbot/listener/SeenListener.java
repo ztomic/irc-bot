@@ -1,6 +1,7 @@
 package com.ztomic.ircbot.listener;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -29,6 +30,9 @@ import org.pircbotx.hooks.events.NickChangeEvent;
 import org.pircbotx.hooks.events.PartEvent;
 import org.pircbotx.hooks.events.QuitEvent;
 import org.pircbotx.hooks.types.GenericMessageEvent;
+
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -196,7 +200,14 @@ public class SeenListener extends CommandListener {
 	}
 
 	public Seen findSeen(String nick, String server) {
-		return seenRepository.findByServerAndNickIgnoreCase(server, nick);
+		List<Seen> seenList = seenRepository.findAllByServerAndNickIgnoreCase(server, nick, Sort.by(Order.desc("time")));
+		if (seenList.size() > 1) {
+			log.info("Found multiple seen records: {}", seenList);
+		}
+		if (!seenList.isEmpty()) {
+			return seenList.get(0);
+		}
+		return null;
 	}
 
 	private String wrap(String nick, Seen entity) {

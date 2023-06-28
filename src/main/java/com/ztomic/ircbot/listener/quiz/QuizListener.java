@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import com.ztomic.ircbot.component.ExecutorFactory;
 import com.ztomic.ircbot.configuration.IrcConfiguration;

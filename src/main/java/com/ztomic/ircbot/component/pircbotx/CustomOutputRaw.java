@@ -1,7 +1,9 @@
 package com.ztomic.ircbot.component.pircbotx;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -10,6 +12,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.ztomic.ircbot.util.Colors;
+import org.apache.commons.lang3.StringUtils;
 import org.pircbotx.PircBotX;
 import org.pircbotx.Utils;
 import org.pircbotx.output.OutputRaw;
@@ -42,42 +45,51 @@ public class CustomOutputRaw extends OutputRaw {
     	}
     	timestamps.add(System.currentTimeMillis());
     }
-	
-	public void rawLine(String line) {
-		checkNotNull(line, "Line cannot be null");
-		if (!bot.isConnected()) {
-			throw new RuntimeException("Not connected to server");
-		}
+
+	public void rawLine(String line, String logline) {
+		checkArgument(StringUtils.isNotBlank(line), "Cannot send empty line to server: '%s'", line);
+		checkArgument(bot.isConnected(), "Not connected to server");
+
+		limiter.acquire();
+		
 		writeLock.lock();
+
+
 		try {
 			//Block until we can send, taking into account a changing lastSentLine
 			checkDelay();
-			log.info(OUTPUT_MARKER, line);
+			if (StringUtils.isNotBlank(logline)) {
+				log.info(OUTPUT_MARKER, logline);
+			} else {
+				log.info(OUTPUT_MARKER, line);
+			}
 			Utils.sendRawLineToServer(bot, line);
-			lastSentLine = System.nanoTime();
+		} catch (IOException e) {
+			throw new RuntimeException("IO exception when sending line to server, is the network still up? " + exceptionDebug(), e);
 		} catch (Exception e) {
-			throw new RuntimeException("Couldn't pause thread for message delay", e);
+			throw new RuntimeException("Could not send line to server. " + exceptionDebug(), e);
 		} finally {
 			writeLock.unlock();
 		}
 	}
-	
-	public void rawLineNow(String line, boolean resetDelay) {
+
+	public void rawLineNow(String line, String logline) {
 		checkNotNull(line, "Line cannot be null");
-		if (!bot.isConnected()) {
-			throw new RuntimeException("Not connected to server");
-		}
+		checkArgument(bot.isConnected(), "Not connected to server");
+		
 		writeLock.lock();
 		try {
 			line = Colors.paintString(line);
-			log.info(OUTPUT_MARKER, line);
+			if (StringUtils.isNotBlank(logline)) {
+				log.info(OUTPUT_MARKER, logline);
+			} else {
+				log.info(OUTPUT_MARKER, line);
+			}
 			Utils.sendRawLineToServer(bot, line);
-			lastSentLine = System.nanoTime();
-			if (resetDelay)
-				//Reset the 
-				writeNowCondition.signalAll();
+		} catch (IOException e) {
+			throw new RuntimeException("IO exception when sending line to server, is the network still up? " + exceptionDebug(), e);
 		} catch (Exception e) {
-			throw new RuntimeException("Couldn't pause thread for message delay", e);
+			throw new RuntimeException("Could not send line to server. " + exceptionDebug(), e);
 		} finally {
 			writeLock.unlock();
 		}
