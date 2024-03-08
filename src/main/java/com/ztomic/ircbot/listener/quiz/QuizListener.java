@@ -302,7 +302,7 @@ public class QuizListener extends CommandListener {
 			case START -> {
 				String lang = null;
 				if (args.size() >= 1) {
-					lang = args.get(0);
+					lang = args.getFirst();
 				}
 				startQuiz(event.getBot(), channel, lang);
 			}
@@ -367,7 +367,7 @@ public class QuizListener extends CommandListener {
 			}
 			case IGNORENICK -> {
 				if (args.size() == 1) {
-					String nick = args.get(0).trim();
+					String nick = args.getFirst().trim();
 					if (isIgnoredNick(nick)) {
 						event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is already ignored");
 					} else {
@@ -378,7 +378,7 @@ public class QuizListener extends CommandListener {
 			}
 			case UNIGNORENICK -> {
 				if (args.size() == 1) {
-					String nick = args.get(0).trim();
+					String nick = args.getFirst().trim();
 					if (!isIgnoredNick(nick)) {
 						event.getBot().sendIRC().message(user.getNick(), "{C}4Nick [" + nick + "] is not ignored");
 					} else {
@@ -390,7 +390,7 @@ public class QuizListener extends CommandListener {
 			case ERROR -> {
 				if (args.size() >= 2) {
 					log.info("User {} is reporting error at question {}", user, args);
-					long questionNumber = Util.parseLong(args.get(0), -1);
+					long questionNumber = Util.parseLong(args.getFirst(), -1);
 					if (questionNumber != -1) {
 						Optional<Question> question = questionRepository.findById(questionNumber);
 						if (question.isPresent()) {

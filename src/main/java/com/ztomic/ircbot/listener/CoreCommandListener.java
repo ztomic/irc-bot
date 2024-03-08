@@ -82,46 +82,46 @@ public class CoreCommandListener extends CommandListener {
 		switch (coreCommand) {
 			case NICK -> {
 				if (args.size() == 1) {
-					event.getBot().sendIRC().changeNick(args.get(0));
+					event.getBot().sendIRC().changeNick(args.getFirst());
 				}
 			}
 			case JOIN -> {
 				if (args.size() >= 1) {
-					event.getBot().sendIRC().joinChannel(args.get(0));
+					event.getBot().sendIRC().joinChannel(args.getFirst());
 				}
 			}
 			case PART -> {
 				if (args.size() == 1) {
-					event.getBot().sendRaw().rawLine("PART " + args.get(0));
+					event.getBot().sendRaw().rawLine("PART " + args.getFirst());
 				} else if (args.size() > 1) {
-					event.getBot().sendRaw().rawLine("PART " + args.get(0) + " :" + formatCollection(args.subList(1, args.size()), " "));
+					event.getBot().sendRaw().rawLine("PART " + args.getFirst() + " :" + formatCollection(args.subList(1, args.size()), " "));
 				}
 			}
 			case MSG -> {
 				if (args.size() >= 2) {
-					event.getBot().sendIRC().message(args.get(0), formatCollection(args.subList(1, args.size()), " "));
+					event.getBot().sendIRC().message(args.getFirst(), formatCollection(args.subList(1, args.size()), " "));
 				}
 			}
 			case NOTICE -> {
 				if (args.size() >= 2) {
-					event.getBot().sendIRC().notice(args.get(0), formatCollection(args.subList(1, args.size()), " "));
+					event.getBot().sendIRC().notice(args.getFirst(), formatCollection(args.subList(1, args.size()), " "));
 				}
 			}
 			case ACTION -> {
 				if (args.size() >= 2) {
-					event.getBot().sendIRC().action(args.get(0), formatCollection(args.subList(1, args.size()), " "));
+					event.getBot().sendIRC().action(args.getFirst(), formatCollection(args.subList(1, args.size()), " "));
 				}
 			}
 			case MODE -> {
 				if (args.size() >= 2) {
-					event.getBot().sendIRC().mode(args.get(0), formatCollection(args.subList(1, args.size()), " "));
+					event.getBot().sendIRC().mode(args.getFirst(), formatCollection(args.subList(1, args.size()), " "));
 				}
 			}
 			case RAW -> event.getBot().sendRaw().rawLine(formatCollection(args, " "));
 			case LUSERS -> {
 				String channel = null;
 				if (args.size() == 1) {
-					channel = args.get(0);
+					channel = args.getFirst();
 				}
 				Channel chan = null;
 				if (StringUtils.hasText(channel)) {
@@ -167,7 +167,7 @@ public class CoreCommandListener extends CommandListener {
 			case USERINFO -> {
 				String _nick = user.getNick();
 				if (args.size() >= 1) {
-					_nick = args.get(0);
+					_nick = args.getFirst();
 				}
 				User _user = userRepository.findByServerAndNickIgnoreCase(event.getBot().getServerHostname(), _nick);
 				if (_user != null) {

@@ -454,13 +454,13 @@ public class QuizChannelHandler implements Runnable {
 
 			if (players.size() >= 1) {
 				players.sort(Player.CMP_BY_SPEED_ASC);
-				channelFastestTime = players.get(0).getFastestTime();
-				Player p = players.get(0);
+				channelFastestTime = players.getFirst().getFastestTime();
+				Player p = players.getFirst();
 				if (p.getFastestTime() != 0) {
 					this.fastestPlayer = p.getId();
 				}
 				players.sort(Player.CMP_BY_STREAK_ASC);
-				p = players.get(0);
+				p = players.getFirst();
 				if (p.getRowRecord() != 0) {
 					this.maxStreakPlayer = p.getId();
 				}
@@ -487,7 +487,7 @@ public class QuizChannelHandler implements Runnable {
 				}
 				nextId = 0;
 				if (q != null) {
-					String answer = q.getAnswers().get(0);
+					String answer = q.getAnswers().getFirst();
 					answer = answer.trim();
 					lastHint = new Hint(answer);
 
@@ -559,7 +559,7 @@ public class QuizChannelHandler implements Runnable {
 	}
 
 	@SuppressWarnings("incomplete-switch")
-	public synchronized void handleCommand(GenericMessageEvent event, QuizListener.QuizCommand command, User user, String[] arguments) {
+	protected synchronized void handleCommand(GenericMessageEvent event, QuizListener.QuizCommand command, User user, String[] arguments) {
 		List<String> args = Arrays.asList(arguments);
 		switch (command) {
 			case H -> {
@@ -590,7 +590,7 @@ public class QuizChannelHandler implements Runnable {
 			case SCORE, SVEO -> {
 				String nick = user.getNick();
 				if (args.size() >= 1) {
-					nick = args.get(0);
+					nick = args.getFirst();
 				}
 				List<Player> players = playerRepository.findByServerAndChannelIgnoreCase(event.getBot().getServerHostname(), channel);
 				Player player = null;
@@ -625,7 +625,7 @@ public class QuizChannelHandler implements Runnable {
 			case SETNEXT -> {
 				int id = 0;
 				if (args.size() >= 1) {
-					id = Util.parseInt(args.get(0), 0);
+					id = Util.parseInt(args.getFirst(), 0);
 				}
 				if (id != 0) {
 					nextId = id;
@@ -672,7 +672,7 @@ public class QuizChannelHandler implements Runnable {
 			case MRTAVSI, MRTVASI -> {
 				String challenger = null;
 				if (args.size() == 1) {
-					challenger = args.get(0);
+					challenger = args.getFirst();
 				}
 				synchronized (duels) {
 					Duel found = null;
@@ -707,7 +707,7 @@ public class QuizChannelHandler implements Runnable {
 				synchronized (duels) {
 					String challenger = null;
 					if (args.size() == 1) {
-						challenger = args.get(0);
+						challenger = args.getFirst();
 					}
 					Duel found = null;
 					for (Duel d : duels) {
@@ -822,7 +822,7 @@ public class QuizChannelHandler implements Runnable {
 		}
 	}
 
-	public Duel findDuel(String nick1, String nick2) {
+	private Duel findDuel(String nick1, String nick2) {
 		synchronized (duels) {
 			for (Duel d : duels) {
 				if ((d.firstPlayer.nick.equalsIgnoreCase(nick1) && d.secondPlayer.nick.equalsIgnoreCase(nick2)) || (d.secondPlayer.nick.equalsIgnoreCase(nick1) && d.firstPlayer.nick.equalsIgnoreCase(nick2))) {
@@ -833,7 +833,7 @@ public class QuizChannelHandler implements Runnable {
 		}
 	}
 
-	public List<Duel> findDuels(String nick) {
+	private List<Duel> findDuels(String nick) {
 		synchronized (duels) {
 			List<Duel> _duels = new ArrayList<>();
 			for (Duel d : duels) {

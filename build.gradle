@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '3.1.1'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version '3.2.3'
+    id 'io.spring.dependency-management' version '1.1.4'
     id 'java'
     id 'java-library'
     id 'distribution'
@@ -10,7 +10,7 @@ plugins {
 group = 'com.ztomic.ircbot'
 version = '2.0.2-SNAPSHOT'
 description = 'irc-bot'
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 configurations {
     compileOnly {
@@ -29,38 +29,38 @@ repositories {
 }
 
 /* Copy SQL scripts from src/main/resources to deploy/sql */
-task copySqlScripts(type: Copy) {
+tasks.register('copySqlScripts', Copy) {
     group = 'distribution'
     from("src/main/resources/")
-    into("$buildDir/deploy/sql")
+    into("$projectDir/build/deploy/sql")
     include "*.sql"
 }
 
 /* Copy deploy directory and replace placeholders in .sh scripts */
-task copyDeploy(type: Copy) {
+tasks.register('copyDeploy', Copy) {
     group = 'distribution'
     dependsOn copySqlScripts
     from("deploy/")
-    into("$buildDir/deploy")
+    into("$projectDir/build/deploy")
     duplicatesStrategy 'include'
     filesMatching("**/*.sh") {
-        project.properties.findAll {it.value != null}.each {
+        project.properties.findAll { it.value != null }.each {
             filter(ReplaceTokens,
-                    beginToken : '${',
-                    endToken : '}',
+                    beginToken: '${',
+                    endToken: '}',
                     tokens: [
-                            (it.key): it.value.toString(),
+                            (it.key)             : it.value.toString(),
                             ("project." + it.key): it.value.toString(),
-                            ("pom." + it.key): it.value.toString()
+                            ("pom." + it.key)    : it.value.toString()
                     ])
         }
-        filter(ReplaceTokens, beginToken : '${',
-                endToken : '}',
+        filter(ReplaceTokens, beginToken: '${',
+                endToken: '}',
                 tokens: [
                         'project.artifactId': project.property('name'),
-                        'project.groupId': project.property('group'),
-                        'pom.artifactId': project.property('name'),
-                        'pom.groupId': project.property('group')
+                        'project.groupId'   : project.property('group'),
+                        'pom.artifactId'    : project.property('name'),
+                        'pom.groupId'       : project.property('group')
                 ])
     }
 }
@@ -156,7 +156,7 @@ tasks.named('bootJar') {
     }
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 

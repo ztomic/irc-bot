@@ -40,7 +40,7 @@ public class CustomOutputRaw extends OutputRaw {
 		timestamps.removeIf(time -> time == null || time < (now - interval - 500));
     	Collections.sort(timestamps);
     	if (timestamps.size() >= limit) {
-    		long delay = (timestamps.get(0) + (long)interval + 501) - now;
+    		long delay = (timestamps.getFirst() + (long)interval + 501) - now;
     		Thread.sleep(delay); 
     	}
     	timestamps.add(System.currentTimeMillis());
@@ -127,10 +127,10 @@ public class CustomOutputRaw extends OutputRaw {
 			while (!parts.isEmpty()) {
 				StringBuilder line = new StringBuilder();
 				while (line.length() < charLimit && !parts.isEmpty()) {
-					if (line.length() + parts.get(0).length() > charLimit) {
+					if (line.length() + parts.getFirst().length() > charLimit) {
 						break;
 					}
-					line.append(parts.remove(0));
+					line.append(parts.removeFirst());
 				}
 				lines.add(line.toString());
 			}

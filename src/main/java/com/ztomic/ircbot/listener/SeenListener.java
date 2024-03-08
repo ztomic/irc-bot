@@ -64,91 +64,98 @@ public class SeenListener extends CommandListener {
 		super.onEvent(ev);
 		PircBotX bot = ev.getBot();
 		String server = bot.getServerHostname();
-		if (ev instanceof KickEvent ck) {
-			org.pircbotx.User user = ck.getRecipient();
-			Seen s = findSeen(user.getNick(), server);
-			if (s == null) {
-				s = new Seen();
-			}
-			s.setNick(user.getNick());
-			s.setName(user.getRealName());
-			s.setIdent(user.getLogin());
-			s.setHost(user.getHostmask());
-			s.setServer(server);
-			s.setType(EventType.Kick);
-			s.setChannel(ck.getChannel().getName());
+		switch (ev) {
+			case KickEvent ck -> {
+				org.pircbotx.User user = ck.getRecipient();
+				Seen s = findSeen(user.getNick(), server);
+				if (s == null) {
+					s = new Seen();
+				}
+				s.setNick(user.getNick());
+				s.setName(user.getRealName());
+				s.setIdent(user.getLogin());
+				s.setHost(user.getHostmask());
+				s.setServer(server);
+				s.setType(EventType.Kick);
+				s.setChannel(ck.getChannel().getName());
 
-			if (s.getDetail() != null) {
-				s.getDetail().clear();
+				if (s.getDetail() != null) {
+					s.getDetail().clear();
+				}
+				s.addDetail("kicked.from.nick", ck.getUser().getNick());
+				s.addDetail("kicked.from.ident", ck.getUser().getLogin());
+				s.addDetail("kicked.from.host", ck.getUser().getHostmask());
+				s.addDetail("channel", ck.getChannel().getName());
+				s.addDetail("kicked.reason", ck.getReason());
+				s.setTime(TimeUtil.getLocalDateTime(ck.getTimestamp()));
+				s = seenRepository.save(s);
 			}
-			s.addDetail("kicked.from.nick", ck.getUser().getNick());
-			s.addDetail("kicked.from.ident", ck.getUser().getLogin());
-			s.addDetail("kicked.from.host", ck.getUser().getHostmask());
-			s.addDetail("channel", ck.getChannel().getName());
-			s.addDetail("kicked.reason", ck.getReason());
-			s.setTime(TimeUtil.getLocalDateTime(ck.getTimestamp()));
-			s = seenRepository.save(s);
-		} else if (ev instanceof PartEvent cp) {
-			org.pircbotx.User user = cp.getUser();
-			Seen s = findSeen(user.getNick(), server);
-			if (s == null) {
-				s = new Seen();
+			case PartEvent cp -> {
+				org.pircbotx.User user = cp.getUser();
+				Seen s = findSeen(user.getNick(), server);
+				if (s == null) {
+					s = new Seen();
+				}
+				s.setNick(user.getNick());
+				s.setName(user.getRealName());
+				s.setIdent(user.getLogin());
+				s.setHost(user.getHostmask());
+				s.setServer(server);
+				s.setType(EventType.Part);
+				s.setChannel(cp.getChannel().getName());
+				s.setTime(TimeUtil.getLocalDateTime(cp.getTimestamp()));
+				if (s.getDetail() != null) s.getDetail().clear();
+				s.addDetail("part.message", cp.getReason());
+				s = seenRepository.save(s);
 			}
-			s.setNick(user.getNick());
-			s.setName(user.getRealName());
-			s.setIdent(user.getLogin());
-			s.setHost(user.getHostmask());
-			s.setServer(server);
-			s.setType(EventType.Part);
-			s.setChannel(cp.getChannel().getName());
-			s.setTime(TimeUtil.getLocalDateTime(cp.getTimestamp()));
-			if (s.getDetail() != null) s.getDetail().clear();
-			s.addDetail("part.message", cp.getReason());
-			s = seenRepository.save(s);
-		} else if (ev instanceof JoinEvent) {
-			
-		} else if (ev instanceof QuitEvent qe) {
-			org.pircbotx.User user = qe.getUser();
-			Seen s = findSeen(user.getNick(), server);
-			if (s == null) {
-				s = new Seen();
+			case JoinEvent joinEvent -> {
 			}
-			s.setNick(user.getNick());
-			s.setName(user.getRealName());
-			s.setIdent(user.getLogin());
-			s.setHost(user.getHostmask());
-			s.setServer(server);
-			s.setType(EventType.Quit);
-			s.setChannel(null);
-			s.setTime(TimeUtil.getLocalDateTime(qe.getTimestamp()));
-			if (s.getDetail() != null) {
-				s.getDetail().clear();
+			case QuitEvent qe -> {
+				org.pircbotx.User user = qe.getUser();
+				Seen s = findSeen(user.getNick(), server);
+				if (s == null) {
+					s = new Seen();
+				}
+				s.setNick(user.getNick());
+				s.setName(user.getRealName());
+				s.setIdent(user.getLogin());
+				s.setHost(user.getHostmask());
+				s.setServer(server);
+				s.setType(EventType.Quit);
+				s.setChannel(null);
+				s.setTime(TimeUtil.getLocalDateTime(qe.getTimestamp()));
+				if (s.getDetail() != null) {
+					s.getDetail().clear();
+				}
+				Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
+				s.addDetail("quit.channels", StringUtils.collectionToCommaDelimitedString(channels));
+				s.addDetail("quit.message", qe.getReason());
+				s = seenRepository.save(s);
 			}
-			Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
-			s.addDetail("quit.channels", StringUtils.collectionToCommaDelimitedString(channels));
-			s.addDetail("quit.message", qe.getReason());
-			s = seenRepository.save(s);
-		} else if (ev instanceof NickChangeEvent nc) {
-			org.pircbotx.User user = nc.getUser();
-			Seen s = findSeen(nc.getOldNick(), server);
-			if (s == null) {
-				s = new Seen();
+			case NickChangeEvent nc -> {
+				org.pircbotx.User user = nc.getUser();
+				Seen s = findSeen(nc.getOldNick(), server);
+				if (s == null) {
+					s = new Seen();
+				}
+				s.setNick(nc.getOldNick());
+				s.setName(user.getRealName());
+				s.setIdent(user.getLogin());
+				s.setHost(user.getHostmask());
+				s.setServer(server);
+				s.setType(EventType.Nick);
+				s.setChannel("");
+				s.setTime(TimeUtil.getLocalDateTime(nc.getTimestamp()));
+				Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
+				if (s.getDetail() != null) {
+					s.getDetail().clear();
+				}
+				s.addDetail("channels", StringUtils.collectionToCommaDelimitedString(channels));
+				s.addDetail("new.nick", nc.getNewNick());
+				s = seenRepository.save(s);
 			}
-			s.setNick(nc.getOldNick());
-			s.setName(user.getRealName());
-			s.setIdent(user.getLogin());
-			s.setHost(user.getHostmask());
-			s.setServer(server);
-			s.setType(EventType.Nick);
-			s.setChannel("");
-			s.setTime(TimeUtil.getLocalDateTime(nc.getTimestamp()));
-			Set<String> channels = user.getChannels().stream().map(Channel::getName).collect(Collectors.toSet());
-			if (s.getDetail() != null){
-				s.getDetail().clear();
+			default -> {
 			}
-			s.addDetail("channels", StringUtils.collectionToCommaDelimitedString(channels));
-			s.addDetail("new.nick", nc.getNewNick());
-			s = seenRepository.save(s);
 		}
 	}
 	
@@ -205,7 +212,7 @@ public class SeenListener extends CommandListener {
 			log.info("Found multiple seen records: {}", seenList);
 		}
 		if (!seenList.isEmpty()) {
-			return seenList.get(0);
+			return seenList.getFirst();
 		}
 		return null;
 	}

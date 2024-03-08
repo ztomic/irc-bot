@@ -18,7 +18,7 @@ public class TimeUtil {
 
 	public static LocalDateTime getLocalDateTimeStartOfMonth() {
 		return LocalDateTime.now()
-				.with(ChronoField.DAY_OF_MONTH, 1)
+				.withDayOfMonth(1)
 				.truncatedTo(ChronoUnit.DAYS);
 	}
 
